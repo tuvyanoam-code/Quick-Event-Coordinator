@@ -39,13 +39,6 @@
   firebase.initializeApp(firebaseConfig);
   const _db = firebase.database();
   window._db = _db;
-  window._dbFns = {
-    ref:     (db, path) => db.ref(path),
-    set:     (r, val)   => r.set(val),
-    get:     (r)        => r.once('value'),          // ✅ תוקן: once('value') במקום get()
-    push:    (r, val)   => r.push(val),
-    onValue: (r, cb)    => { r.on('value', cb); return () => r.off('value', cb); }
-  };
   window.dispatchEvent(new Event('firebase-ready'));
 </script>
 
@@ -402,10 +395,9 @@ async function createEvent(){
   btn.textContent='יוצר אירוע...';
 
   try{
-    const {ref,set,get}=window._dbFns;
     const db=window._db;
     const key=slugify(name)||'event';
-    const existing=await get(ref(db,`events/${key}`));
+    const existing=await db.ref('events/'+key).once('value');
     if(existing.exists()){
       errEl.textContent='קיים כבר אירוע עם שם זה. בחר שם אחר.';
       btn.disabled=false;
@@ -415,17 +407,17 @@ async function createEvent(){
     const code=makeCode();
     const color=COLORS[0];
     const userId='u_'+Date.now();
-    await set(ref(db,`events/${key}`),{name,code,createdAt:Date.now()});
-    await set(ref(db,`events/${key}/users/${userId}`),{name:org,color});
+    await db.ref('events/'+key).set({name:name,code:code,createdAt:Date.now()});
+    await db.ref('events/'+key+'/users/'+userId).set({name:org,color:color});
 
     state.eventKey=key; state.eventName=name; state.eventCode=code;
-    state.user={id:userId,name:org,color};
+    state.user={id:userId,name:org,color:color};
     document.getElementById('codeDisplay').textContent=code;
     document.getElementById('codeResult').style.display='block';
     btn.style.display='none';
   }catch(e){
     console.error('createEvent error:',e);
-    errEl.textContent='שגיאה ביצירת האירוע. בדוק חיבור אינטרנט וחוקי Firebase.';
+    errEl.textContent='שגיאה ביצירת האירוע: '+e.message;
     btn.disabled=false;
     btn.textContent=origText;
   }
@@ -504,16 +496,14 @@ async function joinEvent(){
   btn.textContent='מתחבר...';
 
   try{
-    const {ref,get,set}=window._dbFns;
     const db=window._db;
     const key=slugify(eName)||'event';
-    const snap=await get(ref(db,`events/${key}`));
+    const snap=await db.ref('events/'+key).once('value');
     if(!snap.exists()){errEl.textContent='האירוע לא נמצא. בדוק את השם.';btn.disabled=false;btn.textContent=origText;return}
     const ev=snap.val();
     if(ev.code!==code){errEl.textContent='קוד שגוי.';btn.disabled=false;btn.textContent=origText;return}
 
-    // check if name exists
-    const usersSnap=await get(ref(db,`events/${key}/users`));
+    const usersSnap=await db.ref('events/'+key+'/users').once('value');
     let user=null;
     let colorIdx=0;
     if(usersSnap.exists()){
@@ -525,8 +515,8 @@ async function joinEvent(){
     if(!user){
       const userId='u_'+Date.now();
       const color=COLORS[colorIdx%COLORS.length];
-      await set(ref(db,`events/${key}/users/${userId}`),{name:uName,color});
-      user={id:userId,name:uName,color};
+      await db.ref('events/'+key+'/users/'+userId).set({name:uName,color:color});
+      user={id:userId,name:uName,color:color};
     }
 
     state.eventKey=key; state.eventName=ev.name; state.eventCode=code;
@@ -537,7 +527,7 @@ async function joinEvent(){
     showScreen('screen-calendar');
   }catch(e){
     console.error('joinEvent error:',e);
-    errEl.textContent='שגיאה בהצטרפות. בדוק חיבור אינטרנט וחוקי Firebase.';
+    errEl.textContent='שגיאה בהצטרפות: '+e.message;
     btn.disabled=false;
     btn.textContent=origText;
   }
@@ -545,7 +535,6 @@ async function joinEvent(){
 
 // ── CALENDAR ──────────────────────────────────────────────────
 function startCalendar(){
-  const {ref,onValue}=window._dbFns;
   const db=window._db;
   if(state.unsubscribe)state.unsubscribe();
 
@@ -554,13 +543,16 @@ function startCalendar(){
   document.getElementById('calUserName').textContent=state.user.name;
 
   // live sync
-  state.unsubscribe=onValue(ref(db,`events/${state.eventKey}`),(snap)=>{
+  const evRef=db.ref('events/'+state.eventKey);
+  const cb=function(snap){
     const data=snap.val()||{};
     state.users=data.users||{};
     state.availability=data.availability||{};
     renderCal();
     renderSel();
-  });
+  };
+  evRef.on('value',cb);
+  state.unsubscribe=function(){ evRef.off('value',cb); };
 
   document.getElementById('prevMonth').onclick=()=>{state.month--;if(state.month<0){state.month=11;state.year--}renderCal();renderSel()};
   document.getElementById('nextMonth').onclick=()=>{state.month++;if(state.month>11){state.month=0;state.year++}renderCal();renderSel()};
@@ -620,16 +612,15 @@ async function addAvailability(){
   addBtn.textContent='שומר...';
 
   try{
-    const {ref,get,set}=window._dbFns;
     const db=window._db;
-    const snap=await get(ref(db,`events/${state.eventKey}/availability/${key}`));
+    const snap=await db.ref('events/'+state.eventKey+'/availability/'+key).once('value');
     const entries=snap.exists()?snap.val():[];
-    entries.push({userId:state.user.id,note});
-    await set(ref(db,`events/${state.eventKey}/availability/${key}`),entries);
+    entries.push({userId:state.user.id,note:note});
+    await db.ref('events/'+state.eventKey+'/availability/'+key).set(entries);
     document.getElementById('noteInput').value='';
   }catch(e){
     console.error('addAvailability error:',e);
-    alert('שגיאה בשמירת הזמינות. נסה שוב.');
+    alert('שגיאה בשמירת הזמינות: '+e.message);
   }finally{
     addBtn.disabled=false;
     addBtn.textContent='הוסף זמינות';
