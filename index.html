@@ -24,11 +24,9 @@
   5. הכנס את הערכים למטה ב-EMAILJS_CONFIG
   אם לא מגדיר EmailJS — יעבוד רק כפתור "פתח בדואר" (mailto) כגיבוי.
 -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-  // *** שנה את הערכים האלה לערכים שלך מ-Firebase Console ***
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
   const firebaseConfig = {
     apiKey: "AIzaSyCi0_5qjlb-YgX7tCjygQHV8tbhyN4Bado",
     authDomain: "quick-event-coordinator.firebaseapp.com",
@@ -38,11 +36,16 @@
     messagingSenderId: "979701328018",
     appId: "1:979701328018:web:55fbfe949fbdeb9b901e4b"
   };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  window._db = db;
-  window._dbFns = { ref, set, get, push, onValue };
+  firebase.initializeApp(firebaseConfig);
+  const _db = firebase.database();
+  window._db = _db;
+  window._dbFns = {
+    ref: (db, path) => db.ref(path),
+    set: (r, val) => r.set(val),
+    get: (r) => r.get(),
+    push: (r, val) => r.push(val),
+    onValue: (r, cb) => { r.on('value', cb); return () => r.off('value', cb); }
+  };
   window.dispatchEvent(new Event('firebase-ready'));
 </script>
 
