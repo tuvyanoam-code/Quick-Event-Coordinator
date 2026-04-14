@@ -40,11 +40,11 @@
   const _db = firebase.database();
   window._db = _db;
   window._dbFns = {
-    ref: (db, path) => db.ref(path),
-    set: (r, val) => r.set(val),
-    get: (r) => r.get(),
-    push: (r, val) => r.push(val),
-    onValue: (r, cb) => { r.on('value', cb); return () => r.off('value', cb); }
+    ref:     (db, path) => db.ref(path),
+    set:     (r, val)   => r.set(val),
+    get:     (r)        => r.once('value'),          // ✅ תוקן: once('value') במקום get()
+    push:    (r, val)   => r.push(val),
+    onValue: (r, cb)    => { r.on('value', cb); return () => r.off('value', cb); }
   };
   window.dispatchEvent(new Event('firebase-ready'));
 </script>
@@ -396,28 +396,39 @@ async function createEvent(){
   if(!name){errEl.textContent='נא להזין שם אירוע';return}
   if(!org){errEl.textContent='נא להזין שמך';return}
   errEl.textContent='';
-  document.getElementById('createBtn').disabled=true;
+  const btn=document.getElementById('createBtn');
+  const origText=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='יוצר אירוע...';
 
-  const {ref,set,get}=window._dbFns;
-  const db=window._db;
-  const key=slugify(name)||'event';
-  const existing=await get(ref(db,`events/${key}`));
-  if(existing.exists()){
-    errEl.textContent='קיים כבר אירוע עם שם זה. בחר שם אחר.';
-    document.getElementById('createBtn').disabled=false;
-    return;
+  try{
+    const {ref,set,get}=window._dbFns;
+    const db=window._db;
+    const key=slugify(name)||'event';
+    const existing=await get(ref(db,`events/${key}`));
+    if(existing.exists()){
+      errEl.textContent='קיים כבר אירוע עם שם זה. בחר שם אחר.';
+      btn.disabled=false;
+      btn.textContent=origText;
+      return;
+    }
+    const code=makeCode();
+    const color=COLORS[0];
+    const userId='u_'+Date.now();
+    await set(ref(db,`events/${key}`),{name,code,createdAt:Date.now()});
+    await set(ref(db,`events/${key}/users/${userId}`),{name:org,color});
+
+    state.eventKey=key; state.eventName=name; state.eventCode=code;
+    state.user={id:userId,name:org,color};
+    document.getElementById('codeDisplay').textContent=code;
+    document.getElementById('codeResult').style.display='block';
+    btn.style.display='none';
+  }catch(e){
+    console.error('createEvent error:',e);
+    errEl.textContent='שגיאה ביצירת האירוע. בדוק חיבור אינטרנט וחוקי Firebase.';
+    btn.disabled=false;
+    btn.textContent=origText;
   }
-  const code=makeCode();
-  const color=COLORS[0];
-  const userId='u_'+Date.now();
-  await set(ref(db,`events/${key}`),{name,code,createdAt:Date.now()});
-  await set(ref(db,`events/${key}/users/${userId}`),{name:org,color});
-
-  state.eventKey=key; state.eventName=name; state.eventCode=code;
-  state.user={id:userId,name:org,color};
-  document.getElementById('codeDisplay').textContent=code;
-  document.getElementById('codeResult').style.display='block';
-  document.getElementById('createBtn').style.display='none';
 }
 
 function copyCode(){
@@ -431,17 +442,24 @@ async function handleSendEmail(){
   if(!email){showEmailStatus('נא להזין כתובת מייל בשדה למעלה','#dc2626','#fef2f2');return;}
   const btn=document.getElementById('sendEmailBtn');
   btn.disabled=true; btn.textContent='שולח...';
-  const result=await sendEventEmail(email,state.eventName,state.eventCode,state.user.name);
-  if(result.ok){
-    showEmailStatus('✓ המייל נשלח בהצלחה!','#166534','#f0fdf4');
-    btn.textContent='📧 נשלח ✓';
-  } else {
-    if(result.fallback){
-      showEmailStatus('EmailJS לא מוגדר — לחץ על "פתח בתוכנת המייל" כגיבוי','#92400e','#fffbeb');
-      document.getElementById('openMailtoBtn').style.display='block';
-      btn.textContent='📧 שלח פרטים למייל שלי';
-      btn.disabled=false;
+  try{
+    const result=await sendEventEmail(email,state.eventName,state.eventCode,state.user.name);
+    if(result.ok){
+      showEmailStatus('✓ המייל נשלח בהצלחה!','#166534','#f0fdf4');
+      btn.textContent='📧 נשלח ✓';
+    } else {
+      if(result.fallback){
+        showEmailStatus('EmailJS לא מוגדר — לחץ על "פתח בתוכנת המייל" כגיבוי','#92400e','#fffbeb');
+        document.getElementById('openMailtoBtn').style.display='block';
+        btn.textContent='📧 שלח פרטים למייל שלי';
+        btn.disabled=false;
+      }
     }
+  }catch(e){
+    console.error('handleSendEmail error:',e);
+    showEmailStatus('שגיאה בשליחת המייל. נסה שוב.','#dc2626','#fef2f2');
+    btn.textContent='📧 שלח פרטים למייל שלי';
+    btn.disabled=false;
   }
 }
 
@@ -480,38 +498,49 @@ async function joinEvent(){
   const errEl=document.getElementById('joinErr');
   if(!eName||!code||!uName){errEl.textContent='נא למלא את כל השדות';return}
   errEl.textContent='';
-  document.getElementById('joinBtn').disabled=true;
+  const btn=document.getElementById('joinBtn');
+  const origText=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='מתחבר...';
 
-  const {ref,get,set}=window._dbFns;
-  const db=window._db;
-  const key=slugify(eName)||'event';
-  const snap=await get(ref(db,`events/${key}`));
-  if(!snap.exists()){errEl.textContent='האירוע לא נמצא. בדוק את השם.';document.getElementById('joinBtn').disabled=false;return}
-  const ev=snap.val();
-  if(ev.code!==code){errEl.textContent='קוד שגוי.';document.getElementById('joinBtn').disabled=false;return}
+  try{
+    const {ref,get,set}=window._dbFns;
+    const db=window._db;
+    const key=slugify(eName)||'event';
+    const snap=await get(ref(db,`events/${key}`));
+    if(!snap.exists()){errEl.textContent='האירוע לא נמצא. בדוק את השם.';btn.disabled=false;btn.textContent=origText;return}
+    const ev=snap.val();
+    if(ev.code!==code){errEl.textContent='קוד שגוי.';btn.disabled=false;btn.textContent=origText;return}
 
-  // check if name exists
-  const usersSnap=await get(ref(db,`events/${key}/users`));
-  let user=null;
-  let colorIdx=0;
-  if(usersSnap.exists()){
-    const usersData=usersSnap.val();
-    colorIdx=Object.keys(usersData).length;
-    const existing=Object.entries(usersData).find(([,u])=>u.name===uName);
-    if(existing){user={id:existing[0],...existing[1]}}
+    // check if name exists
+    const usersSnap=await get(ref(db,`events/${key}/users`));
+    let user=null;
+    let colorIdx=0;
+    if(usersSnap.exists()){
+      const usersData=usersSnap.val();
+      colorIdx=Object.keys(usersData).length;
+      const existing=Object.entries(usersData).find(([,u])=>u.name===uName);
+      if(existing){user={id:existing[0],...existing[1]}}
+    }
+    if(!user){
+      const userId='u_'+Date.now();
+      const color=COLORS[colorIdx%COLORS.length];
+      await set(ref(db,`events/${key}/users/${userId}`),{name:uName,color});
+      user={id:userId,name:uName,color};
+    }
+
+    state.eventKey=key; state.eventName=ev.name; state.eventCode=code;
+    state.user=user;
+    btn.disabled=false;
+    btn.textContent=origText;
+    startCalendar();
+    showScreen('screen-calendar');
+  }catch(e){
+    console.error('joinEvent error:',e);
+    errEl.textContent='שגיאה בהצטרפות. בדוק חיבור אינטרנט וחוקי Firebase.';
+    btn.disabled=false;
+    btn.textContent=origText;
   }
-  if(!user){
-    const userId='u_'+Date.now();
-    const color=COLORS[colorIdx%COLORS.length];
-    await set(ref(db,`events/${key}/users/${userId}`),{name:uName,color});
-    user={id:userId,name:uName,color};
-  }
-
-  state.eventKey=key; state.eventName=ev.name; state.eventCode=code;
-  state.user=user;
-  document.getElementById('joinBtn').disabled=false;
-  startCalendar();
-  showScreen('screen-calendar');
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────
@@ -586,13 +615,25 @@ async function addAvailability(){
   if(!state.selected)return;
   const key=fmtKey(state.selected);
   const note=document.getElementById('noteInput').value.trim();
-  const {ref,get,set}=window._dbFns;
-  const db=window._db;
-  const snap=await get(ref(db,`events/${state.eventKey}/availability/${key}`));
-  const entries=snap.exists()?snap.val():[];
-  entries.push({userId:state.user.id,note});
-  await set(ref(db,`events/${state.eventKey}/availability/${key}`),entries);
-  document.getElementById('noteInput').value='';
+  const addBtn=document.getElementById('addBtn');
+  addBtn.disabled=true;
+  addBtn.textContent='שומר...';
+
+  try{
+    const {ref,get,set}=window._dbFns;
+    const db=window._db;
+    const snap=await get(ref(db,`events/${state.eventKey}/availability/${key}`));
+    const entries=snap.exists()?snap.val():[];
+    entries.push({userId:state.user.id,note});
+    await set(ref(db,`events/${state.eventKey}/availability/${key}`),entries);
+    document.getElementById('noteInput').value='';
+  }catch(e){
+    console.error('addAvailability error:',e);
+    alert('שגיאה בשמירת הזמינות. נסה שוב.');
+  }finally{
+    addBtn.disabled=false;
+    addBtn.textContent='הוסף זמינות';
+  }
 }
 
 function logout(){
@@ -607,6 +648,7 @@ function logout(){
   document.getElementById('codeResult').style.display='none';
   document.getElementById('createBtn').style.display='';
   document.getElementById('createBtn').disabled=false;
+  document.getElementById('createBtn').textContent='צור אירוע';
   document.getElementById('sendEmailBtn').textContent='📧 שלח פרטים למייל שלי';
   document.getElementById('sendEmailBtn').disabled=false;
   document.getElementById('openMailtoBtn').style.display='none';
