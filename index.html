@@ -504,7 +504,7 @@ console.log('App ready');
 
 <script>
 (function(){
-  var GEMINI_KEY='AIzaSyBlYu5Po3IgIaZ6_mHT_zlNB25IwN6frfc';
+  var GEMINI_KEY='AIzaSyCXm3NScAfgAEtZqJ0Fkws4JM4b2Ih5VF4';
   var chatHistory=[];
 
   var fab=document.getElementById('ai-fab');
@@ -579,7 +579,7 @@ console.log('App ready');
     };
 
     try{
-      var res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+GEMINI_KEY,{
+      var res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_KEY,{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
       });
       var data=await res.json();
