@@ -97,6 +97,24 @@ textarea:focus{border-color:var(--accent2);background:#fff}
 .admin-panel h3{font-size:13px;font-weight:500;color:#92400e;margin-bottom:8px}
 .date-row{display:flex;gap:8px;margin-bottom:8px}.date-row input{flex:1;font-size:13px;padding:8px 10px}
 @media(max-width:560px){.side-panel{grid-template-columns:1fr}}
+
+/* ── AI Chatbot ── */
+#ai-fab{position:fixed;bottom:24px;left:24px;width:52px;height:52px;border-radius:50%;background:#5ba8d4;color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(91,168,212,0.35);display:flex;align-items:center;justify-content:center;z-index:1000;transition:transform .15s,background .15s}
+#ai-fab:hover{background:#3d8fbf;transform:scale(1.08)}
+#ai-window{position:fixed;bottom:88px;left:24px;width:320px;max-width:calc(100vw - 32px);background:var(--card);border-radius:var(--radius);box-shadow:0 8px 32px rgba(91,168,212,0.18);border:1px solid #c9e6f5;display:none;flex-direction:column;z-index:1000;overflow:hidden;animation:fadeIn .2s ease}
+#ai-window.open{display:flex}
+#ai-header{background:linear-gradient(135deg,#5ba8d4,#7ec8e3);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:500;font-size:14px}
+#ai-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;padding:0 2px}
+#ai-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:320px;min-height:160px}
+.ai-msg{max-width:85%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-wrap}
+.ai-msg.bot{background:#eaf6fc;align-self:flex-start;border-bottom-right-radius:4px}
+.ai-msg.user{background:#5ba8d4;color:#fff;align-self:flex-end;border-bottom-left-radius:4px}
+.ai-msg.typing{color:var(--muted);font-style:italic}
+#ai-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid #c9e6f5}
+#ai-input{flex:1;border:1px solid #c9e6f5;border-radius:8px;padding:7px 10px;font-size:13px;font-family:'Assistant',sans-serif;outline:none;resize:none;background:#fafafa}
+#ai-input:focus{border-color:#5ba8d4;background:#fff}
+#ai-send{background:#5ba8d4;color:#fff;border:none;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:16px;transition:background .1s}
+#ai-send:hover{background:#3d8fbf}#ai-send:disabled{background:#9ca3af;cursor:default}
 </style>
 </head>
 <body>
@@ -466,6 +484,117 @@ document.getElementById('cancelEditBtn').addEventListener('click',function(){can
 document.getElementById('logoutBtn').addEventListener('click',function(){logout()});
 document.getElementById('deleteEventBtn').addEventListener('click',function(){deleteEvent()});
 console.log('App ready');
+</script>
+
+<!-- AI Chatbot -->
+<button id="ai-fab" title="עוזר AI">🤖</button>
+<div id="ai-window">
+  <div id="ai-header">
+    <span>🤖 עוזר האירוע</span>
+    <button id="ai-close">✕</button>
+  </div>
+  <div id="ai-messages">
+    <div class="ai-msg bot">שלום! אני יכול לסכם את הזמינות של המשתתפים, לעזור למצוא זמן מתאים לכולם, או לענות על שאלות על האירוע. במה אפשר לעזור?</div>
+  </div>
+  <div id="ai-input-row">
+    <textarea id="ai-input" rows="1" placeholder="שאל אותי משהו..."></textarea>
+    <button id="ai-send">➤</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var GEMINI_KEY='AIzaSyCXm3NScAfgAEtZqJ0Fkws4JM4b2Ih5VF4';
+  var chatHistory=[];
+
+  var fab=document.getElementById('ai-fab');
+  var win=document.getElementById('ai-window');
+  var closeBtn=document.getElementById('ai-close');
+  var msgs=document.getElementById('ai-messages');
+  var input=document.getElementById('ai-input');
+  var sendBtn=document.getElementById('ai-send');
+
+  fab.addEventListener('click',function(){
+    win.classList.toggle('open');
+    if(win.classList.contains('open')) input.focus();
+  });
+  closeBtn.addEventListener('click',function(){win.classList.remove('open')});
+
+  input.addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}
+  });
+  sendBtn.addEventListener('click',sendMsg);
+
+  function buildContext(){
+    if(!state||!state.eventKey) return 'המשתמש עדיין לא נכנס לאירוע.';
+    var lines=['שם האירוע: '+state.eventName];
+    var users=state.users||{};
+    var avail=state.availability||{};
+    var userNames={};
+    Object.entries(users).forEach(function(e){userNames[e[0]]=e[1].name});
+    var userList=Object.values(users).map(function(u){return u.name});
+    lines.push('משתתפים: '+userList.join(', '));
+    var dates=Object.keys(avail).sort();
+    if(dates.length===0){lines.push('עדיין אין זמינויות שהוזנו.')}
+    else{
+      lines.push('זמינויות שהוזנו:');
+      dates.forEach(function(d){
+        var entries=avail[d];
+        entries.forEach(function(en){
+          var name=userNames[en.userId]||'?';
+          var note=en.note?' ('+en.note+')':'';
+          lines.push('  '+d+': '+name+note);
+        });
+      });
+    }
+    if(state.dateFrom||state.dateTo) lines.push('טווח האירוע: '+(state.dateFrom||'פתוח')+' עד '+(state.dateTo||'פתוח'));
+    return lines.join('\n');
+  }
+
+  function addMsg(text,role){
+    var div=document.createElement('div');
+    div.className='ai-msg '+(role==='user'?'user':'bot');
+    div.textContent=text;
+    msgs.appendChild(div);
+    msgs.scrollTop=msgs.scrollHeight;
+    return div;
+  }
+
+  async function sendMsg(){
+    var text=input.value.trim();
+    if(!text) return;
+    input.value='';
+    sendBtn.disabled=true;
+    addMsg(text,'user');
+    chatHistory.push({role:'user',parts:[{text:text}]});
+
+    var typing=addMsg('מקליד...','bot');
+    typing.classList.add('typing');
+
+    var systemCtx='אתה עוזר AI ידידותי לאפליקציית תיאום זמינות קבוצתית. ענה תמיד בעברית בצורה קצרה וברורה.\n\nנתוני האירוע הנוכחי:\n'+buildContext();
+
+    var body={
+      contents:[{role:'user',parts:[{text:systemCtx+'\n\n---\n'}]}].concat(chatHistory),
+      generationConfig:{maxOutputTokens:500,temperature:0.7}
+    };
+
+    try{
+      var res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+GEMINI_KEY,{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+      });
+      var data=await res.json();
+      var reply=(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts[0].text)||'מצטער, לא הצלחתי לקבל תשובה.';
+      typing.textContent=reply;
+      typing.classList.remove('typing');
+      chatHistory.push({role:'model',parts:[{text:reply}]});
+    }catch(e){
+      typing.textContent='שגיאה בחיבור לשרת AI.';
+      typing.classList.remove('typing');
+    }
+    sendBtn.disabled=false;
+    input.focus();
+  }
+})();
 </script>
 
 <!-- EmailJS SDK -->
