@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>תאם אירוע</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+
+<!-- ====== FIREBASE CONFIG ======
+  1. לך ל: https://console.firebase.google.com
+  2. צור פרויקט חדש
+  3. לחץ "Web" (</>), תן שם, לחץ Register
+  4. העתק את ה-firebaseConfig שמופיע ושנה את הערכים כאן למטה
+  5. בתפריט שמאל: Build > Realtime Database > Create database (בחר "Start in test mode")
+======================================
+
+====== EMAILJS CONFIG ======
+  לשליחת מייל אוטומטי:
+  1. לך ל: https://www.emailjs.com והירשם בחינם
+  2. צור Service (Gmail / Outlook) — תקבל SERVICE_ID
+  3. צור Template עם המשתנים: {{event_name}}, {{event_code}}, {{organizer_name}}, {{site_url}}
+     תקבל TEMPLATE_ID
+  4. בדף Account תמצא PUBLIC_KEY
+  5. הכנס את הערכים למטה ב-EMAILJS_CONFIG
+  אם לא מגדיר EmailJS — יעבוד רק כפתור "פתח בדואר" (mailto) כגיבוי.
+-->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // *** שנה את הערכים האלה לערכים שלך מ-Firebase Console ***
+  const firebaseConfig = {
+    apiKey: "AIzaSyCi0_5qjlb-YgX7tCjygQHV8tbhyN4Bado",
+    authDomain: "quick-event-coordinator.firebaseapp.com",
+    databaseURL: "https://quick-event-coordinator-default-rtdb.firebaseio.com",
+    projectId: "quick-event-coordinator",
+    storageBucket: "quick-event-coordinator.firebasestorage.app",
+    messagingSenderId: "979701328018",
+    appId: "1:979701328018:web:55fbfe949fbdeb9b901e4b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db;
+  window._dbFns = { ref, set, get, push, onValue };
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --accent:#2d6a4f;
+  --accent2:#52b788;
+  --text:#1a1a1a;
+  --muted:#6b7280;
+  --border:#e5e1d8;
+  --danger:#dc2626;
+  --radius:16px;
+  --shadow:0 4px 24px rgba(0,0,0,0.08);
+}
+body{
+  font-family:'Heebo',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:40px 16px 60px;
+}
+h1.logo{
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-0.5px;
+  margin-bottom:8px;
+  color:var(--accent);
+}
+.subtitle{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:40px;
+}
+.screen{display:none;width:100%;max-width:480px;animation:fadeIn 0.25s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* HOME */
+.home-cards{display:grid;gap:14px}
+.home-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:24px 22px;
+  cursor:pointer;
+  transition:box-shadow 0.15s, transform 0.1s, border-color 0.15s;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  box-shadow:var(--shadow);
+}
+.home-card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.13);transform:translateY(-2px);border-color:var(--accent2)}
+.home-icon{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;flex-shrink:0;
+}
+.home-icon.new{background:#d8f3dc}
+.home-icon.join{background:#e0f2fe}
+.home-card-text h2{font-size:17px;font-weight:500;margin-bottom:3px}
+.home-card-text p{font-size:13px;color:var(--muted)}
+
+/* FORM SCREENS */
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:28px 24px;
+  box-shadow:var(--shadow);
+  border:1px solid var(--border);
+}
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:13px;color:var(--muted);cursor:pointer;
+  margin-bottom:18px;background:none;border:none;padding:0;
+  font-family:inherit;
+}
+.back-btn:hover{color:var(--accent)}
+.card h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.card .desc{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6}
+
+label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:5px;margin-top:14px}
+label:first-of-type{margin-top:0}
+input[type=text]{
+  width:100%;border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;font-size:15px;font-family:'Heebo',sans-serif;
+  background:#fafafa;color:var(--text);outline:none;
+  transition:border-color 0.15s;
+}
+input[type=text]:focus{border-color:var(--accent2);background:#fff}
+.err{font-size:12px;color:var(--danger);margin-top:5px;min-height:16px}
+
+.btn{
+  width:100%;margin-top:20px;padding:12px;
+  background:var(--accent);color:#fff;
+  border:none;border-radius:10px;font-size:15px;font-weight:500;
+  font-family:'Heebo',sans-serif;cursor:pointer;
+  transition:background 0.15s, transform 0.08s;
+}
+.btn:hover{background:#1b4332;transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn:disabled{background:#9ca3af;cursor:default;transform:none}
+
+.code-box{
+  background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;
+  padding:14px 16px;margin-top:20px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.code-val{font-size:28px;font-weight:700;letter-spacing:6px;color:var(--accent);font-family:monospace}
+.copy-btn{
+  font-size:12px;color:var(--accent);background:none;border:1px solid var(--accent2);
+  border-radius:8px;padding:5px 10px;cursor:pointer;font-family:'Heebo',sans-serif;
+  transition:background 0.1s;
+}
+.copy-btn:hover{background:#d8f3dc}
+
+/* CALENDAR SCREEN */
+#screen-calendar{max-width:760px}
+.cal-header-row{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:6px;flex-wrap:wrap;gap:8px;
+}
+.event-badge{
+  background:#d8f3dc;color:#1b4332;
+  border-radius:999px;padding:4px 12px;font-size:13px;font-weight:500;
+}
+.user-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#f3f4f6;border-radius:999px;padding:4px 10px;font-size:13px;
+}
+.uc{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+.month-nav{display:flex;justify-content:space-between;align-items:center;margin:10px 0 8px}
+.month-nav h2{font-size:16px;font-weight:500}
+.nav-btn{
+  background:none;border:1px solid var(--border);border-radius:8px;
+  padding:4px 10px;font-size:13px;cursor:pointer;font-family:'Heebo',sans-serif;
+}
+.nav-btn:hover{background:var(--bg)}
+
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dn{font-size:11px;text-align:center;color:var(--muted);padding:3px 0}
+.day{
+  background:#fafafa;border-radius:12px;min-height:72px;
+  padding:6px 7px;font-size:11px;cursor:pointer;
+  border:1px solid var(--border);transition:border-color 0.1s,background 0.1s,transform 0.05s;
+}
+.day:hover{border-color:var(--accent2);background:#fff;transform:translateY(-1px)}
+.day.today{border-color:var(--accent)}
+.day.sel{border-color:var(--accent);background:#f0fdf4}
+.day.empty{background:none;border-color:transparent;cursor:default;min-height:0}
+.day.empty:hover{transform:none}
+.dnum{font-weight:500;color:var(--text);margin-bottom:3px}
+.dots{display:flex;flex-wrap:wrap;gap:2px}
+.dot{width:8px;height:8px;border-radius:50%}
+
+.side-panel{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.pcard{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;
+}
+.pcard h3{font-size:14px;font-weight:500;margin-bottom:8px}
+.sel-label{font-size:12px;font-weight:500;color:var(--text);margin-bottom:6px}
+.av-list{max-height:160px;overflow-y:auto;font-size:12px}
+.av-item{display:flex;align-items:flex-start;gap:6px;margin-bottom:6px}
+.av-color{width:8px;height:8px;border-radius:50%;margin-top:3px;flex-shrink:0}
+.av-text{line-height:1.4;color:var(--text)}
+.av-text strong{font-weight:500}
+.hint{font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.5}
+textarea{
+  width:100%;border:1px solid var(--border);border-radius:10px;
+  padding:8px 12px;font-size:13px;font-family:'Heebo',sans-serif;
+  background:#fafafa;color:var(--text);outline:none;resize:vertical;min-height:56px;
+  transition:border-color 0.15s;
+}
+textarea:focus{border-color:var(--accent2);background:#fff}
+.add-btn{
+  width:100%;margin-top:7px;padding:8px;
+  background:var(--accent);color:#fff;border:none;border-radius:8px;
+  font-size:13px;font-weight:500;font-family:'Heebo',sans-serif;cursor:pointer;
+  transition:background 0.1s;
+}
+.add-btn:hover{background:#1b4332}
+.add-btn:disabled{background:#9ca3af;cursor:default}
+
+.logout-btn{
+  display:block;width:100%;margin-top:10px;padding:7px;
+  background:none;border:1px solid var(--border);border-radius:8px;
+  color:var(--muted);font-size:12px;font-family:'Heebo',sans-serif;cursor:pointer;
+}
+.logout-btn:hover{color:var(--danger);border-color:var(--danger)}
+
+@media(max-width:560px){
+  .side-panel{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<h1 class="logo">📅 תאם אירוע</h1>
+<p class="subtitle">תיאום זמינות קבוצתי פשוט ומהיר</p>
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="home-cards">
+    <div class="home-card" onclick="showScreen('screen-new')">
+      <div class="home-icon new">✨</div>
+      <div class="home-card-text">
+        <h2>תאם אירוע חדש</h2>
+        <p>צור אירוע חדש וקבל קוד לשיתוף עם המוזמנים</p>
+      </div>
+    </div>
+    <div class="home-card" onclick="showScreen('screen-join')">
+      <div class="home-icon join">🔗</div>
+      <div class="home-card-text">
+        <h2>הצטרף לאירוע קיים</h2>
+        <p>הזן שם אירוע וקוד גישה שקיבלת מהמארגן</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW EVENT -->
+<div class="screen" id="screen-new">
+  <button class="back-btn" onclick="showScreen('screen-home')">← חזרה</button>
+  <div class="card">
+    <h2>אירוע חדש</h2>
+    <p class="desc">בחר שם ייחודי לאירוע. משתתפים יזדקקו לשם ולקוד כדי להצטרף.</p>
+    <label>שם האירוע</label>
+    <input type="text" id="newEventName" placeholder='לדוגמה: ישיבת צוות מרץ' maxlength="40"/>
+    <label>שם שלך (המארגן)</label>
+    <input type="text" id="newOrgName" placeholder='לדוגמה: דני' maxlength="20"/>
+    <label>כתובת המייל שלך (לקבלת פרטי האירוע)</label>
+    <input type="text" id="newOrgEmail" placeholder='לדוגמה: dani@gmail.com'/>
+    <div class="err" id="newErr"></div>
+    <button class="btn" id="createBtn" onclick="createEvent()">צור אירוע</button>
+    <div id="codeResult" style="display:none">
+      <div class="code-box">
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px">קוד הגישה לאירוע:</div>
+          <div class="code-val" id="codeDisplay"></div>
+        </div>
+        <button class="copy-btn" onclick="copyCode()">העתק</button>
+      </div>
+      <div id="emailSection" style="margin-top:14px">
+        <div id="emailStatus" style="font-size:12px;padding:8px 12px;border-radius:8px;display:none;margin-bottom:8px"></div>
+        <button class="btn" id="sendEmailBtn" onclick="handleSendEmail()" style="background:var(--accent)">
+          📧 שלח פרטים למייל שלי
+        </button>
+        <button class="btn" id="openMailtoBtn" onclick="handleMailto()" style="margin-top:8px;background:#4b5563;display:none">
+          ✉️ פתח בתוכנת המייל
+        </button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">
+        שלח את <strong>שם האירוע</strong> ואת <strong>הקוד</strong> למשתתפים.<br/>
+        לחץ "המשך" כדי לפתוח את לוח הזמינות.
+      </p>
+      <button class="btn" onclick="enterCalendar()">המשך ללוח ←</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOIN EVENT -->
+<div class="screen" id="screen-join">
+  <button class="back-btn" onclick="showScreen('screen-home')">← חזרה</button>
+  <div class="card">
+    <h2>הצטרף לאירוע</h2>
+    <p class="desc">הזן את שם האירוע והקוד שקיבלת, ואת שמך.</p>
+    <label>שם האירוע</label>
+    <input type="text" id="joinEventName" placeholder='לדוגמה: ישיבת צוות מרץ' maxlength="40"/>
+    <label>קוד גישה</label>
+    <input type="text" id="joinCode" placeholder="4 ספרות" maxlength="4" style="letter-spacing:4px;font-size:20px"/>
+    <label>שם שלך</label>
+    <input type="text" id="joinUserName" placeholder='לדוגמה: יעל' maxlength="20"/>
+    <div class="err" id="joinErr"></div>
+    <button class="btn" id="joinBtn" onclick="joinEvent()">הצטרף לאירוע</button>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="screen" id="screen-calendar">
+  <div class="cal-header-row">
+    <div>
+      <span class="event-badge" id="calEventBadge"></span>
+    </div>
+    <span class="user-pill">
+      <span class="uc" id="calUserDot"></span>
+      <span id="calUserName"></span>
+    </span>
+  </div>
+
+  <div class="month-nav">
+    <button class="nav-btn" id="prevMonth">&#8249;</button>
+    <h2 id="monthLabel"></h2>
+    <button class="nav-btn" id="nextMonth">&#8250;</button>
+  </div>
+
+  <div class="grid" id="calGrid"></div>
+
+  <div class="side-panel">
+    <div class="pcard">
+      <h3>זמינות ליום שנבחר</h3>
+      <div class="sel-label" id="selLabel">לא נבחר יום</div>
+      <div class="av-list" id="avList"><span style="color:var(--muted);font-size:12px">בחר יום בלוח</span></div>
+    </div>
+    <div class="pcard">
+      <h3>הוספת זמינות</h3>
+      <div class="hint">בחר יום בלוח ואז הוסף הערה.</div>
+      <textarea id="noteInput" placeholder="למשל: פנוי 10:00–14:00"></textarea>
+      <button class="add-btn" id="addBtn" disabled onclick="addAvailability()">הוסף זמינות</button>
+      <button class="logout-btn" onclick="logout()">יציאה מהאירוע</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS=['#2d6a4f','#1e6091','#7b2d8b','#c05621','#b7791f','#276749','#2b6cb0','#6b46c1'];
+const DAY_NAMES=['א','ב','ג','ד','ה','ו','ש'];
+
+let state={
+  eventKey:null, eventName:null, eventCode:null,
+  user:null, users:{}, availability:{},
+  month:new Date().getMonth(), year:new Date().getFullYear(), selected:null,
+  unsubscribe:null
+};
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function makeCode(){return String(Math.floor(1000+Math.random()*9000))}
+function slugify(s){return s.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_\u0590-\u05fe]/g,'')}
+function fmtKey(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function fmtLabel(d){return d.toLocaleDateString('he-IL',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+
+// ── CREATE EVENT ──────────────────────────────────────────────
+async function createEvent(){
+  const name=document.getElementById('newEventName').value.trim();
+  const org=document.getElementById('newOrgName').value.trim();
+  const errEl=document.getElementById('newErr');
+  if(!name){errEl.textContent='נא להזין שם אירוע';return}
+  if(!org){errEl.textContent='נא להזין שמך';return}
+  errEl.textContent='';
+  document.getElementById('createBtn').disabled=true;
+
+  const {ref,set,get}=window._dbFns;
+  const db=window._db;
+  const key=slugify(name)||'event';
+  const existing=await get(ref(db,`events/${key}`));
+  if(existing.exists()){
+    errEl.textContent='קיים כבר אירוע עם שם זה. בחר שם אחר.';
+    document.getElementById('createBtn').disabled=false;
+    return;
+  }
+  const code=makeCode();
+  const color=COLORS[0];
+  const userId='u_'+Date.now();
+  await set(ref(db,`events/${key}`),{name,code,createdAt:Date.now()});
+  await set(ref(db,`events/${key}/users/${userId}`),{name:org,color});
+
+  state.eventKey=key; state.eventName=name; state.eventCode=code;
+  state.user={id:userId,name:org,color};
+  document.getElementById('codeDisplay').textContent=code;
+  document.getElementById('codeResult').style.display='block';
+  document.getElementById('createBtn').style.display='none';
+}
+
+function copyCode(){
+  navigator.clipboard.writeText(state.eventCode).then(()=>{
+    const b=document.querySelector('.copy-btn');b.textContent='הועתק ✓';setTimeout(()=>b.textContent='העתק',2000);
+  });
+}
+
+async function handleSendEmail(){
+  const email=document.getElementById('newOrgEmail').value.trim();
+  if(!email){showEmailStatus('נא להזין כתובת מייל בשדה למעלה','#dc2626','#fef2f2');return;}
+  const btn=document.getElementById('sendEmailBtn');
+  btn.disabled=true; btn.textContent='שולח...';
+  const result=await sendEventEmail(email,state.eventName,state.eventCode,state.user.name);
+  if(result.ok){
+    showEmailStatus('✓ המייל נשלח בהצלחה!','#166534','#f0fdf4');
+    btn.textContent='📧 נשלח ✓';
+  } else {
+    if(result.fallback){
+      showEmailStatus('EmailJS לא מוגדר — לחץ על "פתח בתוכנת המייל" כגיבוי','#92400e','#fffbeb');
+      document.getElementById('openMailtoBtn').style.display='block';
+      btn.textContent='📧 שלח פרטים למייל שלי';
+      btn.disabled=false;
+    }
+  }
+}
+
+function handleMailto(){
+  const email=document.getElementById('newOrgEmail').value.trim();
+  const siteUrl=window.location.href.split('?')[0];
+  const subject=encodeURIComponent(`פרטי האירוע: ${state.eventName}`);
+  const body=encodeURIComponent(
+    `שלום ${state.user.name},\n\n`+
+    `יצרת אירוע חדש:\n`+
+    `שם האירוע: ${state.eventName}\n`+
+    `קוד גישה: ${state.eventCode}\n\n`+
+    `קישור לאתר: ${siteUrl}\n\n`+
+    `שלח את שם האירוע והקוד למשתתפים.\n`+
+    `הם יכנסו ל"הצטרף לאירוע קיים" ויזינו את הפרטים.`
+  );
+  window.open(`mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`);
+}
+
+function showEmailStatus(msg,color,bg){
+  const el=document.getElementById('emailStatus');
+  el.textContent=msg; el.style.color=color; el.style.background=bg;
+  el.style.border=`1px solid ${color}40`; el.style.display='block';
+}
+
+function enterCalendar(){
+  startCalendar();
+  showScreen('screen-calendar');
+}
+
+// ── JOIN EVENT ────────────────────────────────────────────────
+async function joinEvent(){
+  const eName=document.getElementById('joinEventName').value.trim();
+  const code=document.getElementById('joinCode').value.trim();
+  const uName=document.getElementById('joinUserName').value.trim();
+  const errEl=document.getElementById('joinErr');
+  if(!eName||!code||!uName){errEl.textContent='נא למלא את כל השדות';return}
+  errEl.textContent='';
+  document.getElementById('joinBtn').disabled=true;
+
+  const {ref,get,set}=window._dbFns;
+  const db=window._db;
+  const key=slugify(eName)||'event';
+  const snap=await get(ref(db,`events/${key}`));
+  if(!snap.exists()){errEl.textContent='האירוע לא נמצא. בדוק את השם.';document.getElementById('joinBtn').disabled=false;return}
+  const ev=snap.val();
+  if(ev.code!==code){errEl.textContent='קוד שגוי.';document.getElementById('joinBtn').disabled=false;return}
+
+  // check if name exists
+  const usersSnap=await get(ref(db,`events/${key}/users`));
+  let user=null;
+  let colorIdx=0;
+  if(usersSnap.exists()){
+    const usersData=usersSnap.val();
+    colorIdx=Object.keys(usersData).length;
+    const existing=Object.entries(usersData).find(([,u])=>u.name===uName);
+    if(existing){user={id:existing[0],...existing[1]}}
+  }
+  if(!user){
+    const userId='u_'+Date.now();
+    const color=COLORS[colorIdx%COLORS.length];
+    await set(ref(db,`events/${key}/users/${userId}`),{name:uName,color});
+    user={id:userId,name:uName,color};
+  }
+
+  state.eventKey=key; state.eventName=ev.name; state.eventCode=code;
+  state.user=user;
+  document.getElementById('joinBtn').disabled=false;
+  startCalendar();
+  showScreen('screen-calendar');
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────
+function startCalendar(){
+  const {ref,onValue}=window._dbFns;
+  const db=window._db;
+  if(state.unsubscribe)state.unsubscribe();
+
+  document.getElementById('calEventBadge').textContent='📅 '+state.eventName;
+  document.getElementById('calUserDot').style.background=state.user.color;
+  document.getElementById('calUserName').textContent=state.user.name;
+
+  // live sync
+  state.unsubscribe=onValue(ref(db,`events/${state.eventKey}`),(snap)=>{
+    const data=snap.val()||{};
+    state.users=data.users||{};
+    state.availability=data.availability||{};
+    renderCal();
+    renderSel();
+  });
+
+  document.getElementById('prevMonth').onclick=()=>{state.month--;if(state.month<0){state.month=11;state.year--}renderCal();renderSel()};
+  document.getElementById('nextMonth').onclick=()=>{state.month++;if(state.month>11){state.month=0;state.year++}renderCal();renderSel()};
+}
+
+function renderCal(){
+  const grid=document.getElementById('calGrid');
+  grid.innerHTML='';
+  DAY_NAMES.forEach(n=>{const d=document.createElement('div');d.className='dn';d.textContent=n;grid.appendChild(d)});
+  const first=new Date(state.year,state.month,1);
+  const days=new Date(state.year,state.month+1,0).getDate();
+  const start=(first.getDay()+6)%7;
+  document.getElementById('monthLabel').textContent=first.toLocaleDateString('he-IL',{month:'long',year:'numeric'});
+  for(let i=0;i<start;i++){const e=document.createElement('div');e.className='day empty';grid.appendChild(e)}
+  const todayKey=fmtKey(new Date());
+  for(let d=1;d<=days;d++){
+    const date=new Date(state.year,state.month,d);
+    const key=fmtKey(date);
+    const div=document.createElement('div');div.className='day';
+    if(key===todayKey)div.classList.add('today');
+    if(state.selected&&fmtKey(state.selected)===key)div.classList.add('sel');
+    const num=document.createElement('div');num.className='dnum';num.textContent=d;div.appendChild(num);
+    const dotsDiv=document.createElement('div');dotsDiv.className='dots';
+    (state.availability[key]||[]).forEach(e=>{
+      const u=state.users[e.userId];if(!u)return;
+      const dot=document.createElement('div');dot.className='dot';dot.style.background=u.color;dotsDiv.appendChild(dot);
+    });
+    div.appendChild(dotsDiv);
+    div.addEventListener('click',()=>{state.selected=date;renderCal();renderSel()});
+    grid.appendChild(div);
+  }
+}
+
+function renderSel(){
+  const addBtn=document.getElementById('addBtn');
+  if(!state.selected){document.getElementById('selLabel').textContent='לא נבחר יום';document.getElementById('avList').innerHTML='';addBtn.disabled=true;return}
+  const key=fmtKey(state.selected);
+  document.getElementById('selLabel').textContent=fmtLabel(state.selected);
+  const entries=state.availability[key]||[];
+  const list=document.getElementById('avList');list.innerHTML='';
+  if(!entries.length){list.innerHTML='<span style="color:var(--muted)">אין זמינות ליום זה</span>';}
+  else{entries.forEach(e=>{
+    const u=state.users[e.userId];if(!u)return;
+    const item=document.createElement('div');item.className='av-item';
+    item.innerHTML=`<div class="av-color" style="background:${u.color}"></div><div class="av-text"><strong>${u.name}</strong>${e.note?' – '+e.note:''}</div>`;
+    list.appendChild(item);
+  });}
+  addBtn.disabled=false;
+}
+
+async function addAvailability(){
+  if(!state.selected)return;
+  const key=fmtKey(state.selected);
+  const note=document.getElementById('noteInput').value.trim();
+  const {ref,get,set}=window._dbFns;
+  const db=window._db;
+  const snap=await get(ref(db,`events/${state.eventKey}/availability/${key}`));
+  const entries=snap.exists()?snap.val():[];
+  entries.push({userId:state.user.id,note});
+  await set(ref(db,`events/${state.eventKey}/availability/${key}`),entries);
+  document.getElementById('noteInput').value='';
+}
+
+function logout(){
+  if(state.unsubscribe)state.unsubscribe();
+  state={eventKey:null,eventName:null,eventCode:null,user:null,users:{},availability:{},month:new Date().getMonth(),year:new Date().getFullYear(),selected:null,unsubscribe:null};
+  document.getElementById('newEventName').value='';
+  document.getElementById('newOrgName').value='';
+  document.getElementById('newOrgEmail').value='';
+  document.getElementById('joinEventName').value='';
+  document.getElementById('joinCode').value='';
+  document.getElementById('joinUserName').value='';
+  document.getElementById('codeResult').style.display='none';
+  document.getElementById('createBtn').style.display='';
+  document.getElementById('createBtn').disabled=false;
+  document.getElementById('sendEmailBtn').textContent='📧 שלח פרטים למייל שלי';
+  document.getElementById('sendEmailBtn').disabled=false;
+  document.getElementById('openMailtoBtn').style.display='none';
+  document.getElementById('emailStatus').style.display='none';
+  showScreen('screen-home');
+}
+
+window.addEventListener('firebase-ready',()=>{console.log('Firebase connected')});
+</script>
+
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+// *** הגדר כאן את פרטי EmailJS שלך ***
+const EMAILJS_CONFIG = {
+  publicKey:  'YOUR_PUBLIC_KEY',   // מ-Account > API Keys
+  serviceId:  'YOUR_SERVICE_ID',   // מ-Email Services
+  templateId: 'YOUR_TEMPLATE_ID'   // מ-Email Templates
+};
+
+const EMAILJS_READY = EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY';
+if(EMAILJS_READY) emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
+
+// שליחת מייל לאחר יצירת אירוע
+async function sendEventEmail(toEmail, eventName, code, organizerName) {
+  const siteUrl = window.location.href.split('?')[0];
+  const subject = encodeURIComponent(`הזמנה לתאם אירוע: ${eventName}`);
+  const bodyLines = [
+    `שלום,`,
+    ``,
+    `${organizerName} מזמין/ת אותך לתאם זמינות לאירוע: ${eventName}`,
+    ``,
+    `שם האירוע: ${eventName}`,
+    `קוד גישה: ${code}`,
+    ``,
+    `כדי להצטרף היכנס לאתר: ${siteUrl}`,
+    `לחץ על "הצטרף לאירוע קיים" והזן את שם האירוע והקוד.`,
+    ``,
+    `בברכה,`,
+    `${organizerName}`
+  ].join('\n');
+
+  if(EMAILJS_READY) {
+    try {
+      await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+        to_email: toEmail,
+        event_name: eventName,
+        event_code: code,
+        organizer_name: organizerName,
+        site_url: siteUrl
+      });
+      return { ok: true };
+    } catch(e) {
+      console.error('EmailJS error:', e);
+      return { ok: false, fallback: true, subject, body: bodyLines };
+    }
+  }
+  // גיבוי: פתח mailto
+  return { ok: false, fallback: true, subject, body: encodeURIComponent(bodyLines) };
+}
+
+function openMailto(email, subject, body) {
+  window.open(`mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`);
+}
+</script>
+</body>
+</html>
