@@ -504,7 +504,11 @@ console.log('App ready');
 
 <script>
 (function(){
-  var GEMINI_KEY='AIzaSyBlYu5Po3IgIaZ6_mHT_zlNB25IwN6frfc';
+  // ⚠️ החלף כאן את המפתח שלך!
+  var GEMINI_KEY='PUT_YOUR_NEW_API_KEY_HERE';
+
+  // רשימת מודלים לניסיון — אם הראשון נכשל, ננסה את הבא
+  var MODELS=['gemini-2.5-flash-lite','gemini-2.5-flash','gemini-2.5-pro'];
   var chatHistory=[];
 
   var fab=document.getElementById('ai-fab');
@@ -560,6 +564,48 @@ console.log('App ready');
     return div;
   }
 
+  // ניסיון לשלוח בקשה עם fallback בין מודלים
+  async function tryGemini(body, modelIndex){
+    if(modelIndex>=MODELS.length) return {ok:false, error:'כל המודלים נכשלו. בדוק את מפתח ה-API שלך ב-Google AI Studio.'};
+    var model=MODELS[modelIndex];
+    var url='https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+GEMINI_KEY;
+    console.log('[AI] ניסיון עם מודל: '+model);
+    try{
+      var res=await fetch(url,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+      });
+      if(!res.ok){
+        var errData=await res.json().catch(function(){return {}});
+        var errMsg=(errData.error&&errData.error.message)||('HTTP '+res.status);
+        console.warn('[AI] מודל '+model+' נכשל ('+res.status+'): '+errMsg);
+        // אם 403 או 404, ננסה מודל אחר
+        if(res.status===403||res.status===404){
+          return tryGemini(body, modelIndex+1);
+        }
+        // אם 429, ננתן הודעה ברורה
+        if(res.status===429){
+          return {ok:false, error:'חריגה מהמכסה החינמית. נסה שוב בעוד דקה.'};
+        }
+        return {ok:false, error:'שגיאה: '+errMsg};
+      }
+      var data=await res.json();
+      if(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts[0].text){
+        console.log('[AI] הצלחה עם מודל: '+model);
+        return {ok:true, text:data.candidates[0].content.parts[0].text};
+      }
+      // אם אין candidates — ייתכן חסימת תוכן
+      if(data.promptFeedback&&data.promptFeedback.blockReason){
+        return {ok:false, error:'ההודעה נחסמה על ידי מסנן תוכן.'};
+      }
+      return {ok:false, error:'לא התקבלה תשובה מהמודל.'};
+    }catch(e){
+      console.error('[AI] שגיאת רשת עם '+model+': '+e.message);
+      return tryGemini(body, modelIndex+1);
+    }
+  }
+
   async function sendMsg(){
     var text=input.value.trim();
     if(!text) return;
@@ -573,23 +619,24 @@ console.log('App ready');
 
     var systemCtx='אתה עוזר AI ידידותי לאפליקציית תיאום זמינות קבוצתית. ענה תמיד בעברית בצורה קצרה וברורה.\n\nנתוני האירוע הנוכחי:\n'+buildContext();
 
+    // שמירה על היסטוריה קצרה — מקסימום 10 הודעות אחרונות
+    var recentHistory=chatHistory.slice(-10);
+
     var body={
-      contents:[{role:'user',parts:[{text:systemCtx+'\n\n---\n'}]}].concat(chatHistory),
+      contents:[{role:'user',parts:[{text:systemCtx+'\n\n---\n'}]}].concat(recentHistory),
       generationConfig:{maxOutputTokens:500,temperature:0.7}
     };
 
-    try{
-      var res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key='+GEMINI_KEY,{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
-      });
-      var data=await res.json();
-      var reply=(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts[0].text)||'מצטער, לא הצלחתי לקבל תשובה.';
-      typing.textContent=reply;
+    var result=await tryGemini(body, 0);
+    if(result.ok){
+      typing.textContent=result.text;
       typing.classList.remove('typing');
-      chatHistory.push({role:'model',parts:[{text:reply}]});
-    }catch(e){
-      typing.textContent='שגיאה בחיבור לשרת AI.';
+      chatHistory.push({role:'model',parts:[{text:result.text}]});
+    }else{
+      typing.textContent=result.error;
       typing.classList.remove('typing');
+      // הסר את ההודעה האחרונה מההיסטוריה כי לא קיבלנו תשובה
+      chatHistory.pop();
     }
     sendBtn.disabled=false;
     input.focus();
