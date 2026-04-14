@@ -22,64 +22,103 @@
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#f7f5f0;--card:#ffffff;--accent:#2d6a4f;--accent2:#52b788;--text:#1a1a1a;--muted:#6b7280;--border:#e5e1d8;--danger:#dc2626;--radius:16px;--shadow:0 4px 24px rgba(0,0,0,0.08)}
-body{font-family:'Assistant',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 16px 60px}
+
+/* ── Light Theme (default) ── */
+:root{
+  --bg:#f7f5f0;--card:#ffffff;--accent:#2d6a4f;--accent2:#52b788;
+  --text:#1a1a1a;--muted:#6b7280;--border:#e5e1d8;--danger:#dc2626;
+  --radius:16px;--shadow:0 4px 24px rgba(0,0,0,0.08);
+  --input-bg:#fafafa;--hover-bg:#fff;--day-bg:#fafafa;
+  --day-disabled-bg:#f3f3f3;--day-sel-bg:#f0fdf4;
+  --code-box-bg:#f0fdf4;--code-box-border:#bbf7d0;
+  --admin-bg:#fffbeb;--admin-border:#fde68a;--admin-text:#92400e;
+  --pill-bg:#f3f4f6;--ai-bubble-bg:#eaf6fc;
+}
+
+/* ── Dark Theme ── */
+[data-theme="dark"]{
+  --bg:#1a1a2e;--card:#16213e;--accent:#52b788;--accent2:#95d5b2;
+  --text:#e0e0e0;--muted:#9ca3af;--border:#2a2a4a;--danger:#f87171;
+  --shadow:0 4px 24px rgba(0,0,0,0.3);
+  --input-bg:#1e2a45;--hover-bg:#1e2a45;--day-bg:#1e2a45;
+  --day-disabled-bg:#12192e;--day-sel-bg:#1b3a2a;
+  --code-box-bg:#1b3a2a;--code-box-border:#2d6a4f;
+  --admin-bg:#2a2000;--admin-border:#92400e;--admin-text:#fde68a;
+  --pill-bg:#2a2a4a;--ai-bubble-bg:#1e2a45;
+}
+
+body{font-family:'Assistant',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 16px 60px;transition:background .3s,color .3s}
 h1.logo{font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:8px;color:var(--accent)}
 .subtitle{font-size:14px;color:var(--muted);margin-bottom:40px}
 .screen{display:none;width:100%;max-width:480px;animation:fadeIn .25s ease}
 .screen.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@keyframes popIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
 .home-cards{display:grid;gap:14px}
 .home-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 22px;cursor:pointer;transition:box-shadow .15s,transform .1s,border-color .15s;display:flex;align-items:center;gap:18px;box-shadow:var(--shadow)}
 .home-card:hover{box-shadow:0 8px 32px rgba(0,0,0,.13);transform:translateY(-2px);border-color:var(--accent2)}
 .home-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
 .home-icon.new{background:#d8f3dc}.home-icon.join{background:#e0f2fe}
+[data-theme="dark"] .home-icon.new{background:#1b3a2a}
+[data-theme="dark"] .home-icon.join{background:#1e2a45}
 .home-card-text h2{font-size:17px;font-weight:500;margin-bottom:3px}
 .home-card-text p{font-size:13px;color:var(--muted)}
-.card{background:var(--card);border-radius:var(--radius);padding:28px 24px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card{background:var(--card);border-radius:var(--radius);padding:28px 24px;box-shadow:var(--shadow);border:1px solid var(--border);transition:background .3s,border-color .3s}
 .back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:18px;background:none;border:none;padding:0;font-family:inherit}
 .back-btn:hover{color:var(--accent)}
 .card h2{font-size:20px;font-weight:700;margin-bottom:6px}
 .card .desc{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6}
 label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:5px;margin-top:14px}
 label:first-of-type{margin-top:0}
-input[type=text],input[type=date]{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:15px;font-family:'Assistant',sans-serif;background:#fafafa;color:var(--text);outline:none;transition:border-color .15s}
-input[type=text]:focus,input[type=date]:focus{border-color:var(--accent2);background:#fff}
+input[type=text],input[type=date]{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:15px;font-family:'Assistant',sans-serif;background:var(--input-bg);color:var(--text);outline:none;transition:border-color .15s,background .15s}
+input[type=text]:focus,input[type=date]:focus{border-color:var(--accent2);background:var(--hover-bg)}
 .err{font-size:12px;color:var(--danger);margin-top:5px;min-height:16px}
 .btn{width:100%;margin-top:20px;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;font-family:'Assistant',sans-serif;cursor:pointer;transition:background .15s,transform .08s}
 .btn:hover{background:#1b4332;transform:translateY(-1px)}.btn:active{transform:none}.btn:disabled{background:#9ca3af;cursor:default;transform:none}
 .btn-danger{background:var(--danger)}.btn-danger:hover{background:#991b1b}
 .btn-sm{margin-top:8px;padding:8px;font-size:13px;border-radius:8px}
-.code-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.code-box{background:var(--code-box-bg);border:1px solid var(--code-box-border);border-radius:10px;padding:14px 16px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .code-val{font-size:28px;font-weight:700;letter-spacing:6px;color:var(--accent);font-family:monospace}
 .copy-btn{font-size:12px;color:var(--accent);background:none;border:1px solid var(--accent2);border-radius:8px;padding:5px 10px;cursor:pointer;font-family:'Assistant',sans-serif;transition:background .1s}
 .copy-btn:hover{background:#d8f3dc}
+[data-theme="dark"] .copy-btn:hover{background:#1b3a2a}
+
+/* ── Share buttons ── */
+.share-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.share-btn{flex:1;min-width:100px;padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:500;font-family:'Assistant',sans-serif;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s}
+.share-btn:hover{opacity:0.85}
+.share-btn.whatsapp{background:#25D366}
+.share-btn.telegram{background:#0088cc}
+.share-btn.copy-link{background:#6b7280}
+
 #screen-calendar{max-width:760px}
 .cal-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px}
 .event-badge{background:#d8f3dc;color:#1b4332;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:500}
-.user-pill{display:inline-flex;align-items:center;gap:6px;background:#f3f4f6;border-radius:999px;padding:4px 10px;font-size:13px}
+[data-theme="dark"] .event-badge{background:#1b3a2a;color:#95d5b2}
+.user-pill{display:inline-flex;align-items:center;gap:6px;background:var(--pill-bg);border-radius:999px;padding:4px 10px;font-size:13px}
 .uc{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .month-nav{display:flex;justify-content:space-between;align-items:center;margin:10px 0 8px}
 .month-nav h2{font-size:16px;font-weight:500}
-.nav-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer;font-family:'Heebo',sans-serif}
-.nav-btn:hover{background:var(--bg)}
-.date-range-info{font-size:11px;color:var(--accent);text-align:center;margin-bottom:6px;padding:4px 8px;background:#f0fdf4;border-radius:8px}
+.nav-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer;font-family:'Assistant',sans-serif;color:var(--text);transition:background .1s}
+.nav-btn:hover{background:var(--input-bg)}
+.date-range-info{font-size:11px;color:var(--accent);text-align:center;margin-bottom:6px;padding:4px 8px;background:var(--code-box-bg);border-radius:8px}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .dn{font-size:11px;text-align:center;color:var(--muted);padding:3px 0}
-.day{background:#fafafa;border-radius:12px;min-height:72px;padding:6px 7px;font-size:11px;cursor:pointer;border:1px solid var(--border);transition:border-color .1s,background .1s,transform .05s}
-.day:hover{border-color:var(--accent2);background:#fff;transform:translateY(-1px)}
-.day.today{border-color:var(--accent)}.day.sel{border-color:var(--accent);background:#f0fdf4}
+.day{background:var(--day-bg);border-radius:12px;min-height:72px;padding:6px 7px;font-size:11px;cursor:pointer;border:1px solid var(--border);transition:border-color .1s,background .1s,transform .05s}
+.day:hover{border-color:var(--accent2);background:var(--hover-bg);transform:translateY(-1px)}
+.day.today{border-color:var(--accent)}.day.sel{border-color:var(--accent);background:var(--day-sel-bg)}
 .day.empty{background:none;border-color:transparent;cursor:default;min-height:0}.day.empty:hover{transform:none}
-.day.disabled{background:#f3f3f3;color:#ccc;cursor:not-allowed;opacity:.5}.day.disabled:hover{transform:none;border-color:var(--border)}
+.day.disabled{background:var(--day-disabled-bg);color:#ccc;cursor:not-allowed;opacity:.5}.day.disabled:hover{transform:none;border-color:var(--border)}
 .dnum{font-weight:500;color:var(--text);margin-bottom:3px}
 .dots{display:flex;flex-wrap:wrap;gap:2px}.dot{width:8px;height:8px;border-radius:50%}
 .side-panel{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-.pcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.pcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;transition:background .3s,border-color .3s}
 .pcard h3{font-size:14px;font-weight:500;margin-bottom:8px}
 .sel-label{font-size:12px;font-weight:500;color:var(--text);margin-bottom:6px}
 .av-list{max-height:200px;overflow-y:auto;font-size:12px}
-.av-item{display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;padding:4px 6px;border-radius:6px;transition:background .1s}
-.av-item.mine{background:#f0fdf4}
+.av-item{display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;padding:4px 6px;border-radius:6px;transition:background .1s;animation:slideIn .2s ease}
+.av-item.mine{background:var(--day-sel-bg)}
 .av-color{width:8px;height:8px;border-radius:50%;margin-top:3px;flex-shrink:0}
 .av-text{line-height:1.4;color:var(--text);flex:1}.av-text strong{font-weight:500}
 .av-actions{display:flex;gap:4px;flex-shrink:0}
@@ -87,16 +126,44 @@ input[type=text]:focus,input[type=date]:focus{border-color:var(--accent2);backgr
 .av-actions button:hover{background:#e5e7eb}
 .av-actions .del-entry:hover{background:#fef2f2;color:var(--danger)}
 .hint{font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.5}
-textarea{width:100%;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-family:'Heebo',sans-serif;background:#fafafa;color:var(--text);outline:none;resize:vertical;min-height:56px;transition:border-color .15s}
-textarea:focus{border-color:var(--accent2);background:#fff}
-.add-btn{width:100%;margin-top:7px;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;font-family:'Heebo',sans-serif;cursor:pointer;transition:background .1s}
+textarea{width:100%;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;font-family:'Assistant',sans-serif;background:var(--input-bg);color:var(--text);outline:none;resize:vertical;min-height:56px;transition:border-color .15s,background .15s}
+textarea:focus{border-color:var(--accent2);background:var(--hover-bg)}
+.add-btn{width:100%;margin-top:7px;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;font-family:'Assistant',sans-serif;cursor:pointer;transition:background .1s}
 .add-btn:hover{background:#1b4332}.add-btn:disabled{background:#9ca3af;cursor:default}
-.logout-btn{display:block;width:100%;margin-top:10px;padding:7px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-family:'Heebo',sans-serif;cursor:pointer}
+.logout-btn{display:block;width:100%;margin-top:10px;padding:7px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-family:'Assistant',sans-serif;cursor:pointer}
 .logout-btn:hover{color:var(--danger);border-color:var(--danger)}
-.admin-panel{margin-top:12px;padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius)}
-.admin-panel h3{font-size:13px;font-weight:500;color:#92400e;margin-bottom:8px}
+.admin-panel{margin-top:12px;padding:12px;background:var(--admin-bg);border:1px solid var(--admin-border);border-radius:var(--radius);transition:background .3s}
+.admin-panel h3{font-size:13px;font-weight:500;color:var(--admin-text);margin-bottom:8px}
 .date-row{display:flex;gap:8px;margin-bottom:8px}.date-row input{flex:1;font-size:13px;padding:8px 10px}
-@media(max-width:560px){.side-panel{grid-template-columns:1fr}}
+
+/* ── Responsive: better mobile calendar ── */
+@media(max-width:560px){
+  .side-panel{grid-template-columns:1fr}
+  .day{min-height:52px;padding:4px 3px;border-radius:8px}
+  .dnum{font-size:12px}
+  .dots .dot{width:6px;height:6px}
+  .month-nav h2{font-size:14px}
+  .nav-btn{padding:3px 8px;font-size:12px}
+  #ai-window{width:calc(100vw - 16px);left:8px;bottom:78px}
+}
+@media(max-width:360px){
+  .day{min-height:42px;padding:3px 2px}
+  .grid{gap:2px}
+}
+
+/* ── Toast Notifications ── */
+#toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:90%;max-width:400px}
+.toast{padding:12px 18px;border-radius:10px;font-size:13px;font-family:'Assistant',sans-serif;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.15);animation:toastIn .3s ease;pointer-events:auto;display:flex;align-items:center;gap:8px;line-height:1.4}
+.toast.success{background:#166534}.toast.error{background:#dc2626}.toast.info{background:#1e6091}.toast.warning{background:#92400e}
+.toast .toast-icon{font-size:16px;flex-shrink:0}
+.toast .toast-text{flex:1}
+.toast.removing{animation:toastOut .3s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-20px)}}
+
+/* ── Dark Mode Toggle ── */
+#darkModeToggle{position:fixed;top:16px;left:16px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--border);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:background .3s,border-color .3s}
+#darkModeToggle:hover{border-color:var(--accent2)}
 
 /* ── AI Chatbot ── */
 #ai-fab{position:fixed;bottom:24px;left:24px;width:52px;height:52px;border-radius:50%;background:#5ba8d4;color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(91,168,212,0.35);display:flex;align-items:center;justify-content:center;z-index:1000;transition:transform .15s,background .15s}
@@ -107,17 +174,24 @@ textarea:focus{border-color:var(--accent2);background:#fff}
 #ai-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;padding:0 2px}
 #ai-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:320px;min-height:160px}
 .ai-msg{max-width:85%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
-.ai-msg.bot{background:#eaf6fc;align-self:flex-start;border-bottom-right-radius:4px}
+.ai-msg.bot{background:var(--ai-bubble-bg);align-self:flex-start;border-bottom-right-radius:4px;color:var(--text)}
 .ai-msg.user{background:#5ba8d4;color:#fff;align-self:flex-end;border-bottom-left-radius:4px}
 .ai-msg.typing{color:var(--muted);font-style:italic}
 #ai-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid #c9e6f5}
-#ai-input{flex:1;border:1px solid #c9e6f5;border-radius:8px;padding:7px 10px;font-size:13px;font-family:'Assistant',sans-serif;outline:none;resize:none;background:#fafafa}
-#ai-input:focus{border-color:#5ba8d4;background:#fff}
+#ai-input{flex:1;border:1px solid #c9e6f5;border-radius:8px;padding:7px 10px;font-size:13px;font-family:'Assistant',sans-serif;outline:none;resize:none;background:var(--input-bg);color:var(--text)}
+#ai-input:focus{border-color:#5ba8d4;background:var(--hover-bg)}
 #ai-send{background:#5ba8d4;color:#fff;border:none;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:16px;transition:background .1s}
 #ai-send:hover{background:#3d8fbf}#ai-send:disabled{background:#9ca3af;cursor:default}
 </style>
 </head>
 <body>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Dark Mode Toggle -->
+<button id="darkModeToggle" title="מצב כהה / בהיר">🌙</button>
+
 <h1 class="logo">📅 Quick Event Coordinator</h1>
 <p class="subtitle">תיאום זמינות קבוצתי פשוט ומהיר</p>
 
@@ -125,78 +199,85 @@ textarea:focus{border-color:var(--accent2);background:#fff}
 <div class="screen active" id="screen-home">
   <div class="home-cards">
     <div class="home-card" id="goNew"><div class="home-icon new">🗓️</div><div class="home-card-text"><h2>תאם אירוע חדש</h2><p>צור אירוע חדש וקבל קוד לשיתוף עם המוזמנים</p></div></div>
-    <div class="home-card" id="goJoin"><div class="home-icon join">🔗</div><div class="home-card-text"><h2>הצטרף לאירוע קיים</h2><p>הזן שם אירוע וקוד גישה שקיבלת</p></div></div>
+    <div class="home-card" id="goJoin"><div class="home-icon join">🔗</div><div class="home-card-text"><h2>הצטרף לאירוע קיים</h2><p>הזן שם אירוע וקוד גישה שקיבלת מהמארגן</p></div></div>
   </div>
 </div>
 
 <!-- NEW EVENT -->
 <div class="screen" id="screen-new">
-  <button class="back-btn" id="backFromNew">← חזור</button>
+  <button type="button" class="back-btn" id="backFromNew">← חזרה</button>
   <div class="card">
-    <h2>צור אירוע חדש</h2>
-    <p class="desc">הזן את פרטי האירוע שלך. תקבל קוד שתוכל לשתף עם משתתפים.</p>
+    <h2>אירוע חדש</h2>
+    <p class="desc">בחר שם לאירוע. משתתפים יזדקקו לשם ולקוד כדי להצטרף.</p>
     <label>שם האירוע</label>
-    <input type="text" id="newEventName" placeholder="למשל: ישיבת צוות"/>
-    <label>שמך</label>
-    <input type="text" id="newOrgName" placeholder="דני"/>
-    <label>תאריך התחלה (אופציונלי)</label>
-    <input type="date" id="newDateFrom"/>
-    <label>תאריך סיום (אופציונלי)</label>
-    <input type="date" id="newDateTo"/>
+    <input type="text" id="newEventName" placeholder='לדוגמה: ישיבת צוות מרץ' maxlength="40"/>
+    <label>שם שלך (המארגן)</label>
+    <input type="text" id="newOrgName" placeholder='לדוגמה: דני' maxlength="20"/>
+    <label>כתובת המייל שלך (לקבלת פרטי האירוע)</label>
+    <input type="text" id="newOrgEmail" placeholder='לדוגמה: dani@gmail.com'/>
+    <label>הגבלת טווח תאריכים (אופציונלי)</label>
+    <div class="date-row">
+      <input type="date" id="newDateFrom" title="מתאריך"/>
+      <input type="date" id="newDateTo" title="עד תאריך"/>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:-4px">אם תשאיר ריק — הלוח יהיה פתוח ללא הגבלה</div>
     <div class="err" id="newErr"></div>
-    <button class="btn" id="createBtn">צור אירוע</button>
+    <button type="button" class="btn" id="createBtn">צור אירוע</button>
     <div id="codeResult" style="display:none">
-      <p style="font-size:13px;color:var(--muted);margin-top:20px;margin-bottom:8px">✓ האירוע נוצר בהצלחה! שתף את הקוד הזה:</p>
       <div class="code-box">
-        <div class="code-val" id="codeDisplay">1234</div>
+        <div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">קוד הגישה לאירוע:</div><div class="code-val" id="codeDisplay"></div></div>
         <button type="button" class="copy-btn" id="copyBtn">העתק</button>
       </div>
-      <label style="margin-top:16px">שלח למשתתפים דרך מייל (אופציונלי)</label>
-      <input type="text" id="newOrgEmail" placeholder="דוגמה@example.com"/>
-      <button type="button" class="btn btn-sm" id="sendEmailBtn">📧 שלח פרטים למייל שלי</button>
-      <button type="button" class="btn btn-sm" id="openMailtoBtn" style="display:none;background:#6b7280">📧 פתח בתוכנת המייל</button>
-      <div id="emailStatus" style="display:none;font-size:12px;padding:8px;border-radius:8px;margin-top:8px"></div>
-      <button type="button" class="btn btn-sm" id="enterCalBtn">→ עבור ללוח</button>
+      <!-- Share buttons -->
+      <div class="share-row" id="shareRow">
+        <button type="button" class="share-btn whatsapp" id="shareWhatsApp">📱 WhatsApp</button>
+        <button type="button" class="share-btn telegram" id="shareTelegram">✈️ Telegram</button>
+        <button type="button" class="share-btn copy-link" id="shareCopyLink">🔗 העתק קישור</button>
+      </div>
+      <div id="emailSection" style="margin-top:14px">
+        <div id="emailStatus" style="font-size:12px;padding:8px 12px;border-radius:8px;display:none;margin-bottom:8px"></div>
+        <button type="button" class="btn" id="sendEmailBtn" style="background:var(--accent)">📧 שלח פרטים למייל שלי</button>
+        <button type="button" class="btn" id="openMailtoBtn" style="margin-top:8px;background:#4b5563;display:none">✉️ פתח בתוכנת המייל</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">שלח את <strong>שם האירוע</strong> ואת <strong>הקוד</strong> למשתתפים.<br/>לחץ "המשך" כדי לפתוח את לוח הזמינות.</p>
+      <button type="button" class="btn" id="enterCalBtn">המשך ללוח ←</button>
     </div>
   </div>
 </div>
 
 <!-- JOIN EVENT -->
 <div class="screen" id="screen-join">
-  <button class="back-btn" id="backFromJoin">← חזור</button>
+  <button type="button" class="back-btn" id="backFromJoin">← חזרה</button>
   <div class="card">
-    <h2>הצטרף לאירוע קיים</h2>
-    <p class="desc">הזן את שם האירוע, הקוד שקיבלת, ושמך.</p>
+    <h2>הצטרף לאירוע</h2>
+    <p class="desc">הזן את שם האירוע והקוד שקיבלת, ואת שמך.</p>
     <label>שם האירוע</label>
-    <input type="text" id="joinEventName" placeholder="ישיבת צוות"/>
+    <input type="text" id="joinEventName" placeholder='לדוגמה: ישיבת צוות מרץ' maxlength="40"/>
     <label>קוד גישה</label>
-    <input type="text" id="joinCode" placeholder="1234"/>
-    <label>שמך</label>
-    <input type="text" id="joinUserName" placeholder="יעל"/>
+    <input type="text" id="joinCode" placeholder="4 ספרות" maxlength="4" style="letter-spacing:4px;font-size:20px"/>
+    <label>שם שלך</label>
+    <input type="text" id="joinUserName" placeholder='לדוגמה: יעל' maxlength="20"/>
     <div class="err" id="joinErr"></div>
-    <button class="btn" id="joinBtn">הצטרף לאירוע</button>
+    <button type="button" class="btn" id="joinBtn">הצטרף לאירוע</button>
   </div>
 </div>
 
 <!-- CALENDAR -->
 <div class="screen" id="screen-calendar">
-  <button class="back-btn" id="backFromCal" onclick="logout()">← חזור</button>
-  <div class="card">
-    <div class="cal-header-row">
-      <span class="event-badge" id="calEventBadge">📅 אירוע</span>
-      <div class="user-pill"><div class="uc" id="calUserDot"></div><span id="calUserName">משתמש</span></div>
-    </div>
-    <div id="dateRangeInfo" class="date-range-info" style="display:none"></div>
-    <div class="month-nav">
-      <button type="button" class="nav-btn" id="prevMonth">← חודש קודם</button>
-      <h2 id="monthLabel">ינואר 2024</h2>
-      <button type="button" class="nav-btn" id="nextMonth">חודש הבא →</button>
-    </div>
-    <div class="grid" id="calGrid"></div>
+  <div class="cal-header-row">
+    <div><span class="event-badge" id="calEventBadge"></span></div>
+    <span class="user-pill"><span class="uc" id="calUserDot"></span><span id="calUserName"></span></span>
   </div>
+  <div id="dateRangeInfo" class="date-range-info" style="display:none"></div>
+  <div class="month-nav">
+    <button type="button" class="nav-btn" id="prevMonth">&#8249;</button>
+    <h2 id="monthLabel"></h2>
+    <button type="button" class="nav-btn" id="nextMonth">&#8250;</button>
+  </div>
+  <div class="grid" id="calGrid"></div>
   <div class="side-panel">
     <div class="pcard">
-      <h3>זמינויות ליום</h3>
+      <h3>זמינות ליום שנבחר</h3>
       <div class="sel-label" id="selLabel">לא נבחר יום</div>
       <div class="av-list" id="avList"><span style="color:var(--muted);font-size:12px">בחר יום בלוח</span></div>
     </div>
@@ -216,6 +297,44 @@ textarea:focus{border-color:var(--accent2);background:#fff}
 </div>
 
 <script>
+/* ── Toast Notification System ── */
+function showToast(message, type, duration) {
+  type = type || 'info';
+  duration = duration || 3500;
+  var container = document.getElementById('toast-container');
+  var toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  var icons = {success:'✓',error:'✗',info:'ℹ',warning:'⚠'};
+  toast.innerHTML = '<span class="toast-icon">'+(icons[type]||'ℹ')+'</span><span class="toast-text">'+message+'</span>';
+  container.appendChild(toast);
+  setTimeout(function(){
+    toast.classList.add('removing');
+    setTimeout(function(){ if(toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+  }, duration);
+}
+
+/* ── Dark Mode ── */
+(function(){
+  var toggle = document.getElementById('darkModeToggle');
+  var saved = localStorage.getItem('theme');
+  if(saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)){
+    document.documentElement.setAttribute('data-theme','dark');
+    toggle.textContent = '☀️';
+  }
+  toggle.addEventListener('click', function(){
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if(isDark){
+      document.documentElement.removeAttribute('data-theme');
+      toggle.textContent = '🌙';
+      localStorage.setItem('theme','light');
+    } else {
+      document.documentElement.setAttribute('data-theme','dark');
+      toggle.textContent = '☀️';
+      localStorage.setItem('theme','dark');
+    }
+  });
+})();
+
 var COLORS=['#2d6a4f','#1e6091','#7b2d8b','#c05621','#b7791f','#276749','#2b6cb0','#6b46c1'];
 var DAY_NAMES=['א','ב','ג','ד','ה','ו','ש'];
 var db=window._db;
@@ -231,6 +350,25 @@ function fmtDateHeb(s){if(!s)return'';var p=s.split('-');return p[2]+'/'+p[1]+'/
 function dbGet(path){return new Promise(function(resolve,reject){db.ref(path).once('value',function(snap){resolve(snap)},function(err){reject(err)})})}
 function dbSet(path,val){return db.ref(path).set(val)}
 function dbRemove(path){return db.ref(path).remove()}
+
+// ── Share Functions ─────────────────────────────────────────
+function getShareText(){
+  var siteUrl=window.location.href.split('?')[0];
+  return 'הזמנה לתאם אירוע: '+state.eventName+'\n\nשם האירוע: '+state.eventName+'\nקוד גישה: '+state.eventCode+'\n\nהיכנס לאתר: '+siteUrl+'\nלחץ על "הצטרף לאירוע קיים" והזן את הפרטים.';
+}
+function shareWhatsApp(){
+  window.open('https://wa.me/?text='+encodeURIComponent(getShareText()),'_blank');
+}
+function shareTelegram(){
+  window.open('https://t.me/share/url?url='+encodeURIComponent(window.location.href.split('?')[0])+'&text='+encodeURIComponent(getShareText()),'_blank');
+}
+function shareCopyLink(){
+  navigator.clipboard.writeText(getShareText()).then(function(){
+    showToast('הטקסט הועתק ללוח!','success');
+  }).catch(function(){
+    showToast('שגיאה בהעתקה','error');
+  });
+}
 
 // ── CREATE EVENT ─────────────────────────────────────────────
 function createEvent(){
@@ -262,26 +400,28 @@ function createEvent(){
     document.getElementById('codeDisplay').textContent=code;
     document.getElementById('codeResult').style.display='block';
     btn.style.display='none';
+    showToast('האירוע "'+name+'" נוצר בהצלחה!','success');
   }).catch(function(e){
     console.error('createEvent error:',e);errEl.textContent='שגיאה ביצירת האירוע: '+e.message;btn.disabled=false;btn.textContent='צור אירוע';
+    showToast('שגיאה ביצירת האירוע','error');
   });
 }
 
-function copyCode(){navigator.clipboard.writeText(state.eventCode).then(function(){var b=document.getElementById('copyBtn');b.textContent='הועתק ✓';setTimeout(function(){b.textContent='העתק'},2000)})}
+function copyCode(){navigator.clipboard.writeText(state.eventCode).then(function(){var b=document.getElementById('copyBtn');b.textContent='הועתק ✓';showToast('הקוד הועתק!','success');setTimeout(function(){b.textContent='העתק'},2000)})}
 
 function handleSendEmail(){
   var email=document.getElementById('newOrgEmail').value.trim();
   if(!email){showEmailStatus('נא להזין כתובת מייל בשדה למעלה','#dc2626','#fef2f2');return}
   var btn=document.getElementById('sendEmailBtn');btn.disabled=true;btn.textContent='שולח...';
   sendEventEmail(email,state.eventName,state.eventCode,state.user.name).then(function(result){
-    if(result.ok){showEmailStatus('✓ המייל נשלח בהצלחה!','#166534','#f0fdf4');btn.textContent='📧 נשלח ✓'}
+    if(result.ok){showEmailStatus('✓ המייל נשלח בהצלחה!','#166534','#f0fdf4');btn.textContent='📧 נשלח ✓';showToast('המייל נשלח בהצלחה!','success')}
     else if(result.fallback){showEmailStatus('EmailJS לא מוגדר — לחץ על "פתח בתוכנת המייל" כגיבוי','#92400e','#fffbeb');document.getElementById('openMailtoBtn').style.display='block';btn.textContent='📧 שלח פרטים למייל שלי';btn.disabled=false}
-  }).catch(function(e){showEmailStatus('שגיאה בשליחת המייל. נסה שוב.','#dc2626','#fef2f2');btn.textContent='📧 שלח פרטים למייל שלי';btn.disabled=false});
+  }).catch(function(e){showEmailStatus('שגיאה בשליחת המייל. נסה שוב.','#dc2626','#fef2f2');btn.textContent='📧 שלח פרטים למייל שלי';btn.disabled=false;showToast('שגיאה בשליחת המייל','error')});
 }
 function handleMailto(){
   var email=document.getElementById('newOrgEmail').value.trim();var siteUrl=window.location.href.split('?')[0];
   var subject=encodeURIComponent('פרטי האירוע: '+state.eventName);
-  var body=encodeURIComponent('שלום '+state.user.name+',\n\nיצרת אירוע חדש:\nשם האירוע: '+state.eventName+'\nקוד גישה: '+state.eventCode+'\n\nקישור לאתר: '+siteUrl+'\n\nשתף את שם האירוע והקוד עם משתתפים.\nהם יכנסו ל"הצטרף לאירוע קיים" ויזינו את הפרטים.');
+  var body=encodeURIComponent('שלום '+state.user.name+',\n\nיצרת אירוע חדש:\nשם האירוע: '+state.eventName+'\nקוד גישה: '+state.eventCode+'\n\nקישור לאתר: '+siteUrl+'\n\nשלח את שם האירוע והקוד למשתתפים.\nהם יכנסו ל"הצטרף לאירוע קיים" ויזינו את הפרטים.');
   window.open('mailto:'+encodeURIComponent(email)+'?subject='+subject+'&body='+body);
 }
 function showEmailStatus(msg,color,bg){var el=document.getElementById('emailStatus');el.textContent=msg;el.style.color=color;el.style.background=bg;el.style.border='1px solid '+color+'40';el.style.display='block'}
@@ -300,9 +440,9 @@ function joinEvent(){
   var key=slug+'_'+code;
 
   dbGet('events/'+key).then(function(snap){
-    if(!snap.exists()){errEl.textContent='האירוע לא נמצא. בדוק את השם והקוד.';btn.disabled=false;btn.textContent='הצטרף לאירוע';return}
+    if(!snap.exists()){errEl.textContent='האירוע לא נמצא. בדוק את השם והקוד.';btn.disabled=false;btn.textContent='הצטרף לאירוע';showToast('האירוע לא נמצא','error');return}
     var ev=snap.val();
-    if(ev.code!==code){errEl.textContent='קוד שגוי.';btn.disabled=false;btn.textContent='הצטרף לאירוע';return}
+    if(ev.code!==code){errEl.textContent='קוד שגוי.';btn.disabled=false;btn.textContent='הצטרף לאירוע';showToast('קוד גישה שגוי','error');return}
     return dbGet('events/'+key+'/users').then(function(usersSnap){
       var user=null;var colorIdx=0;
       if(usersSnap.exists()){
@@ -315,9 +455,10 @@ function joinEvent(){
       return p.then(function(){
         state.eventKey=key;state.eventName=ev.name;state.eventCode=code;state.isAdmin=(ev.adminUserId===user.id);state.user=user;
         btn.disabled=false;btn.textContent='הצטרף לאירוע';startCalendar();showScreen('screen-calendar');
+        showToast('הצטרפת לאירוע "'+ev.name+'" בהצלחה!','success');
       });
     });
-  }).catch(function(e){errEl.textContent='שגיאה בהצטרפות: '+e.message;btn.disabled=false;btn.textContent='הצטרף לאירוע'});
+  }).catch(function(e){errEl.textContent='שגיאה בהצטרפות: '+e.message;btn.disabled=false;btn.textContent='הצטרף לאירוע';showToast('שגיאה בהצטרפות לאירוע','error')});
 }
 
 // ── CALENDAR ─────────────────────────────────────────────────
@@ -331,7 +472,7 @@ function startCalendar(){
   var evRef=db.ref('events/'+state.eventKey);
   var cb=function(snap){
     var data=snap.val();
-    if(!data){alert('האירוע נמחק.');logout();return}
+    if(!data){showToast('האירוע נמחק.','warning');logout();return}
     state.users=data.users||{};state.availability=data.availability||{};
     state.dateFrom=data.dateFrom||null;state.dateTo=data.dateTo||null;
     var rangeEl=document.getElementById('dateRangeInfo');
@@ -410,10 +551,9 @@ function renderSel(){
             document.getElementById('noteInput').focus();
           });
           item.querySelector('.del-entry').addEventListener('click',function(){
-            if(!confirm('למחוק את הזמינות שלך ליום זה?')) return;
             var updated=entries.slice();updated.splice(idx,1);
-            if(updated.length===0) dbRemove('events/'+state.eventKey+'/availability/'+key);
-            else dbSet('events/'+state.eventKey+'/availability/'+key,updated);
+            if(updated.length===0) dbRemove('events/'+state.eventKey+'/availability/'+key).then(function(){showToast('הזמינות נמחקה','info')});
+            else dbSet('events/'+state.eventKey+'/availability/'+key,updated).then(function(){showToast('הזמינות נמחקה','info')});
           });
         }
         list.appendChild(item);
@@ -444,14 +584,32 @@ function addAvailability(){
     }
     return dbSet('events/'+state.eventKey+'/availability/'+key,entries);
   }).then(function(){
+    var wasEdit = state.editingEntry !== null;
     cancelEdit();
-  }).catch(function(e){alert('שגיאה בשמירת הזמינות: '+e.message)}).finally(function(){addBtn.disabled=false;addBtn.textContent='הוסף זמינות'});
+    showToast(wasEdit ? 'הזמינות עודכנה בהצלחה!' : 'הזמינות נוספה בהצלחה!','success');
+  }).catch(function(e){showToast('שגיאה בשמירת הזמינות: '+e.message,'error')}).finally(function(){addBtn.disabled=false;addBtn.textContent='הוסף זמינות'});
 }
 
 function deleteEvent(){
-  if(!confirm('האם אתה בטוח שברצונך למחוק את האירוע "'+state.eventName+'"?\nפעולה זו בלתי הפיכה.')) return;
-  if(!confirm('אישור סופי: כל הנתונים יימחקו. להמשיך?')) return;
-  dbRemove('events/'+state.eventKey).then(function(){alert('האירוע נמחק בהצלחה.');logout()}).catch(function(e){alert('שגיאה במחיקת האירוע: '+e.message)});
+  // Use a simple inline confirmation instead of native confirm()
+  showToast('לוחץ שוב על "מחק" תוך 5 שניות לאישור','warning',5000);
+  var delBtn=document.getElementById('deleteEventBtn');
+  delBtn.textContent='⚠️ לחץ שוב לאישור';
+  delBtn.style.background='#991b1b';
+  var confirmed=false;
+  var handler=function(){
+    confirmed=true;
+    delBtn.removeEventListener('click',handler);
+    dbRemove('events/'+state.eventKey).then(function(){showToast('האירוע נמחק בהצלחה.','success');logout()}).catch(function(e){showToast('שגיאה במחיקת האירוע: '+e.message,'error')});
+  };
+  delBtn.addEventListener('click',handler);
+  setTimeout(function(){
+    if(!confirmed){
+      delBtn.removeEventListener('click',handler);
+      delBtn.textContent='🗑️ מחק את האירוע';
+      delBtn.style.background='';
+    }
+  },5000);
 }
 
 function logout(){
@@ -482,6 +640,9 @@ document.getElementById('addBtn').addEventListener('click',function(){addAvailab
 document.getElementById('cancelEditBtn').addEventListener('click',function(){cancelEdit()});
 document.getElementById('logoutBtn').addEventListener('click',function(){logout()});
 document.getElementById('deleteEventBtn').addEventListener('click',function(){deleteEvent()});
+document.getElementById('shareWhatsApp').addEventListener('click',function(){shareWhatsApp()});
+document.getElementById('shareTelegram').addEventListener('click',function(){shareTelegram()});
+document.getElementById('shareCopyLink').addEventListener('click',function(){shareCopyLink()});
 console.log('App ready');
 </script>
 
@@ -493,11 +654,11 @@ console.log('App ready');
     <button id="ai-close">✕</button>
   </div>
   <div id="ai-messages">
-    <div class="ai-msg bot">שלום! אני יכול לעזור לך לנהל את האירוע שלך. אני יכול ליצור אירוע חדש, להצטרף לאירוע קיים, להוסיף זמינות, ועוד. במה אפשר לעזור?</div>
+    <div class="ai-msg bot">שלום! אני יכול לעזור לך לנהל את האירוע שלך. אני יכול ליצור אירוע חדש, להצטרף לאירוע קיים, להוסיף זמינות, למצוא זמן מתאים לכולם, ועוד. במה אפשר לעזור?</div>
   </div>
   <div id="ai-input-row">
     <textarea id="ai-input" rows="1" placeholder="שאל אותי משהו..."></textarea>
-    <button id="ai-send">📤</button>
+    <button id="ai-send">➤</button>
   </div>
 </div>
 
@@ -525,17 +686,24 @@ console.log('App ready');
   sendBtn.addEventListener('click',sendMsg);
 
   function buildContext(){
-    if(!state||!state.eventKey) return 'המשתמש עדיין לא נכנס לאירוע.';
+    if(!state||!state.eventKey) return 'המשתמש עדיין לא נכנס לאירוע. הוא נמצא במסך הבית.';
     var lines=['שם האירוע: '+state.eventName];
     var users=state.users||{};
     var avail=state.availability||{};
     var userNames={};
     Object.entries(users).forEach(function(e){userNames[e[0]]=e[1].name});
     var userList=Object.values(users).map(function(u){return u.name});
-    lines.push('משתתפים: '+userList.join(', '));
+    lines.push('משתתפים ('+userList.length+'): '+userList.join(', '));
+
+    // Smart context: summarize availability instead of listing all
     var dates=Object.keys(avail).sort();
-    if(dates.length===0){lines.push('עדיין אין זמינויות שהוזנו.')}
-    else{
+    var totalEntries=0;
+    dates.forEach(function(d){ totalEntries += (avail[d]||[]).length; });
+
+    if(dates.length===0){
+      lines.push('עדיין אין זמינויות שהוזנו.');
+    } else if(totalEntries <= 20){
+      // Small event: show all details
       lines.push('זמינויות שהוזנו:');
       dates.forEach(function(d){
         var entries=avail[d];
@@ -545,9 +713,37 @@ console.log('App ready');
           lines.push('  '+d+': '+name+note);
         });
       });
+    } else {
+      // Large event: summarize
+      lines.push('סה"כ '+totalEntries+' רשומות זמינות על פני '+dates.length+' ימים.');
+      // Find best days
+      var dayCounts=[];
+      dates.forEach(function(d){
+        dayCounts.push({date:d, count:(avail[d]||[]).length});
+      });
+      dayCounts.sort(function(a,b){return b.count-a.count});
+      var top3=dayCounts.slice(0,3);
+      lines.push('הימים עם הכי הרבה זמינויות:');
+      top3.forEach(function(dc){
+        lines.push('  '+dc.date+': '+dc.count+' אנשים');
+      });
+      // Show who hasn't responded
+      var respondedUsers={};
+      dates.forEach(function(d){
+        (avail[d]||[]).forEach(function(en){ respondedUsers[en.userId]=true; });
+      });
+      var notResponded=[];
+      Object.keys(users).forEach(function(uid){
+        if(!respondedUsers[uid]) notResponded.push(users[uid].name);
+      });
+      if(notResponded.length>0) lines.push('עדיין לא הזינו זמינות: '+notResponded.join(', '));
     }
+
     if(state.dateFrom||state.dateTo) lines.push('טווח האירוע: '+(state.dateFrom||'פתוח')+' עד '+(state.dateTo||'פתוח'));
-    if(state.isAdmin) lines.push('תפקיד המשתמש: מארגן אירוע');
+    if(state.isAdmin) lines.push('תפקיד המשתמש: מארגן אירוע (יכול למחוק אירוע ולקבוע תאריכים)');
+    else lines.push('תפקיד המשתמש: משתתף');
+    lines.push('שם המשתמש הנוכחי: '+state.user.name);
+    lines.push('התאריך של היום: '+fmtKey(new Date()));
     return lines.join('\n');
   }
 
@@ -565,6 +761,7 @@ console.log('App ready');
     console.log('AI Command received:', command);
     var action=command.action;
     var params=command.params||{};
+    var message=command.message||'';
 
     switch (action) {
       case 'createEvent':
@@ -575,9 +772,10 @@ console.log('App ready');
           if (params.dateTo) document.getElementById('newDateTo').value = params.dateTo;
           showScreen('screen-new');
           createEvent();
-          addMsg('יוצר אירוע בשם "'+params.eventName+'"...', 'bot');
+          if(message) addMsg(message, 'bot');
+          else addMsg('יוצר אירוע בשם "'+params.eventName+'"...', 'bot');
         } else {
-          addMsg('שגיאה: חסרים פרמטרים ליצירת אירוע.', 'bot');
+          addMsg(message||'חסרים פרטים ליצירת אירוע. נא לציין שם אירוע ושמך.', 'bot');
         }
         break;
       case 'joinEvent':
@@ -587,86 +785,94 @@ console.log('App ready');
           document.getElementById('joinUserName').value = params.userName;
           showScreen('screen-join');
           joinEvent();
-          addMsg('מצטרף לאירוע "'+params.eventName+'"...', 'bot');
+          if(message) addMsg(message, 'bot');
+          else addMsg('מצטרף לאירוע "'+params.eventName+'"...', 'bot');
         } else {
-          addMsg('שגיאה: חסרים פרמטרים להצטרפות לאירוע.', 'bot');
+          addMsg(message||'חסרים פרטים להצטרפות. נא לציין שם אירוע, קוד גישה ושמך.', 'bot');
         }
         break;
       case 'addAvailability':
-        if (params.date && params.note) {
-          var dateObj = new Date(params.date);
+        if (params.date) {
+          var dateObj = new Date(params.date+'T12:00:00');
           if (!isNaN(dateObj.getTime())) {
             state.selected = dateObj;
             state.month = dateObj.getMonth();
             state.year = dateObj.getFullYear();
-            document.getElementById('noteInput').value = params.note;
+            document.getElementById('noteInput').value = params.note||'';
             if(state.eventKey) {
               showScreen('screen-calendar');
               renderCal();
               renderSel();
               addAvailability();
-              addMsg('מוסיף זמינות עבור '+params.date+': "'+params.note+'"...', 'bot');
+              if(message) addMsg(message, 'bot');
+              else addMsg('מוסיף זמינות עבור '+params.date+'...', 'bot');
             } else {
-              addMsg('שגיאה: אתה לא בתוך אירוע. הצטרף לאירוע קודם.', 'bot');
+              addMsg('אתה לא בתוך אירוע. הצטרף לאירוע קודם.', 'bot');
             }
           } else {
-            addMsg('שגיאה: תאריך לא תקין. השתמש בפורמט YYYY-MM-DD.', 'bot');
+            addMsg('תאריך לא תקין. השתמש בפורמט YYYY-MM-DD.', 'bot');
           }
         } else {
-          addMsg('שגיאה: חסרים פרמטרים להוספת זמינות.', 'bot');
+          addMsg(message||'חסר תאריך להוספת זמינות.', 'bot');
         }
         break;
       case 'deleteAvailability':
-        if (params.date) {
-          var dateObj = new Date(params.date);
-          if (!isNaN(dateObj.getTime())) {
-            state.selected = dateObj;
-            state.month = dateObj.getMonth();
-            state.year = dateObj.getFullYear();
-            if(state.eventKey) {
-              showScreen('screen-calendar');
-              renderCal();
-              renderSel();
-              addMsg('בקשה למחיקת הזמינות שלך עבור '+params.date+' התקבלה. בחר את הזמינות בלוח ולחץ על כפתור המחיקה.', 'bot');
-            } else {
-              addMsg('שגיאה: אתה לא בתוך אירוע.', 'bot');
-            }
-          } else {
-            addMsg('שגיאה: תאריך לא תקין.', 'bot');
-          }
+        if (params.date && state.eventKey) {
+          var key = params.date;
+          dbGet('events/'+state.eventKey+'/availability/'+key).then(function(snap){
+            if(!snap.exists()){addMsg('אין זמינות שלך ליום '+key+'.','bot');return}
+            var entries=snap.val();
+            var filtered=entries.filter(function(en){return en.userId!==state.user.id});
+            if(filtered.length===entries.length){addMsg('אין זמינות שלך ליום '+key+'.','bot');return}
+            var p = filtered.length===0 ? dbRemove('events/'+state.eventKey+'/availability/'+key) : dbSet('events/'+state.eventKey+'/availability/'+key,filtered);
+            p.then(function(){
+              if(message) addMsg(message,'bot');
+              else addMsg('הזמינות שלך ליום '+key+' נמחקה.','bot');
+              showToast('הזמינות נמחקה','info');
+              // Update calendar view
+              var dateObj=new Date(key+'T12:00:00');
+              state.selected=dateObj;state.month=dateObj.getMonth();state.year=dateObj.getFullYear();
+              renderCal();renderSel();
+            });
+          }).catch(function(e){addMsg('שגיאה במחיקת הזמינות: '+e.message,'bot')});
+        } else if(!state.eventKey){
+          addMsg('אתה לא בתוך אירוע.', 'bot');
         } else {
-          addMsg('שגיאה: חסרים פרמטרים למחיקת זמינות.', 'bot');
+          addMsg(message||'חסר תאריך למחיקת זמינות.', 'bot');
         }
         break;
       case 'setEventDates':
-        if (params.dateFrom && params.dateTo) {
-          if (!state.isAdmin) {
-            addMsg('שגיאה: רק מארגן האירוע יכול לקבוע תאריכים.', 'bot');
-          } else if (!state.eventKey) {
-            addMsg('שגיאה: אתה לא בתוך אירוע.', 'bot');
-          } else {
-            var updates = {};
-            updates['events/' + state.eventKey + '/dateFrom'] = params.dateFrom;
-            updates['events/' + state.eventKey + '/dateTo'] = params.dateTo;
+        if (!state.isAdmin) {
+          addMsg('רק מארגן האירוע יכול לקבוע תאריכים.', 'bot');
+        } else if (!state.eventKey) {
+          addMsg('אתה לא בתוך אירוע.', 'bot');
+        } else {
+          var updates = {};
+          if(params.dateFrom) updates['events/' + state.eventKey + '/dateFrom'] = params.dateFrom;
+          if(params.dateTo) updates['events/' + state.eventKey + '/dateTo'] = params.dateTo;
+          if(Object.keys(updates).length>0){
             db.ref().update(updates).then(function() {
-              addMsg('קבעתי את תאריכי האירוע מ-'+params.dateFrom+' עד '+params.dateTo+'.', 'bot');
+              if(message) addMsg(message, 'bot');
+              else addMsg('תאריכי האירוע עודכנו.', 'bot');
+              showToast('תאריכי האירוע עודכנו','success');
             }).catch(function(e) {
               addMsg('שגיאה בקביעת התאריכים: ' + e.message, 'bot');
             });
+          } else {
+            addMsg(message||'חסרים תאריכים.','bot');
           }
-        } else {
-          addMsg('שגיאה: חסרים פרמטרים לקביעת תאריכי אירוע.', 'bot');
         }
         break;
       case 'deleteEvent':
         if (!state.isAdmin) {
-          addMsg('שגיאה: רק מארגן האירוע יכול למחוק את האירוע.', 'bot');
+          addMsg('רק מארגן האירוע יכול למחוק את האירוע.', 'bot');
         } else if (!state.eventKey) {
-          addMsg('שגיאה: אתה לא בתוך אירוע.', 'bot');
+          addMsg('אתה לא בתוך אירוע.', 'bot');
         } else {
           dbRemove('events/' + state.eventKey).then(function() {
-            addMsg('מחקתי את האירוע בהצלחה.', 'bot');
-            setTimeout(function() { logout(); }, 1000);
+            addMsg(message||'האירוע נמחק בהצלחה.', 'bot');
+            showToast('האירוע נמחק','success');
+            setTimeout(function() { logout(); }, 1500);
           }).catch(function(e) {
             addMsg('שגיאה במחיקת האירוע: ' + e.message, 'bot');
           });
@@ -674,18 +880,39 @@ console.log('App ready');
         break;
       case 'navigate':
         if (params.screen) {
+          var screenNames={'screen-home':'מסך הבית','screen-new':'יצירת אירוע','screen-join':'הצטרפות לאירוע','screen-calendar':'לוח הזמינות'};
           showScreen(params.screen);
-          addMsg('נווט למסך '+params.screen+'.', 'bot');
+          if(message) addMsg(message, 'bot');
+          else addMsg('עברתי ל'+(screenNames[params.screen]||params.screen)+'.', 'bot');
         } else {
-          addMsg('שגיאה: חסרים פרמטרים לניווט.', 'bot');
+          addMsg(message||'לאן לנווט?', 'bot');
         }
         break;
       case 'logout':
         logout();
-        addMsg('התנתקתי מהאירוע.', 'bot');
+        addMsg(message||'התנתקתי מהאירוע.', 'bot');
+        break;
+      case 'findBestDay':
+        if(!state.eventKey){addMsg('אתה לא בתוך אירוע.','bot');break}
+        var avail=state.availability||{};
+        var dayCounts=[];
+        Object.keys(avail).forEach(function(d){
+          dayCounts.push({date:d,count:(avail[d]||[]).length});
+        });
+        if(dayCounts.length===0){addMsg(message||'עדיין אין זמינויות שהוזנו.','bot');break}
+        dayCounts.sort(function(a,b){return b.count-a.count});
+        var best=dayCounts[0];
+        var names=(avail[best.date]||[]).map(function(en){
+          var u=state.users[en.userId];return u?u.name:'?';
+        });
+        addMsg(message||'היום הכי מתאים: '+best.date+' עם '+best.count+' אנשים פנויים ('+names.join(', ')+').','bot');
+        // Navigate to that day
+        var dateObj=new Date(best.date+'T12:00:00');
+        state.selected=dateObj;state.month=dateObj.getMonth();state.year=dateObj.getFullYear();
+        showScreen('screen-calendar');renderCal();renderSel();
         break;
       default:
-        addMsg('פקודה לא מוכרת: ' + action, 'bot');
+        addMsg(message||'פקודה לא מוכרת.', 'bot');
     }
   }
 
@@ -700,7 +927,22 @@ console.log('App ready');
     var typing=addMsg('מקליד...','bot');
     typing.classList.add('typing');
 
-    var systemCtx='אתה עוזר AI ידידותי לאפליקציית תיאום זמינות קבוצתית. ענה בשפה שבה המשתמש פונה אליך (עברית).\n\nכאשר המשתמש מבקש ממך לבצע פעולה (כמו יצירת אירוע, הצטרפות, הוספת זמינות וכו\'), החזר תשובה בפורמט JSON עם השדות הבאים:\n{\n  "action": "createEvent" | "joinEvent" | "addAvailability" | "deleteAvailability" | "setEventDates" | "deleteEvent" | "navigate" | "logout",\n  "params": { /* פרמטרים ספציפיים לפעולה */ }\n}\n\nדוגמאות:\n- יצירת אירוע: {"action":"createEvent","params":{"eventName":"ישיבת צוות","userName":"דני"}}\n- הצטרפות: {"action":"joinEvent","params":{"eventName":"ישיבת צוות","eventCode":"1234","userName":"יעל"}}\n- הוספת זמינות: {"action":"addAvailability","params":{"date":"2025-04-15","note":"פנוי 10:00-14:00"}}\n- ניווט: {"action":"navigate","params":{"screen":"screen-home"}}\n\nאם המשתמש שואל שאלה (לא מבקש פעולה), ענה בטקסט רגיל בלבד.\n\nנתוני האירוע הנוכחי:\n'+buildContext();
+    var systemCtx='אתה עוזר AI ידידותי וחכם לאפליקציית תיאום זמינות קבוצתית בשם Quick Event Coordinator. ענה בשפה שבה המשתמש פונה אליך.\n\n';
+    systemCtx+='כאשר המשתמש מבקש ממך לבצע פעולה, החזר JSON בלבד (ללא טקסט נוסף, ללא markdown) בפורמט:\n';
+    systemCtx+='{"action":"ACTION","params":{...},"message":"הודעה ידידותית למשתמש"}\n\n';
+    systemCtx+='פעולות זמינות:\n';
+    systemCtx+='- createEvent: params: eventName, userName, dateFrom?(YYYY-MM-DD), dateTo?(YYYY-MM-DD)\n';
+    systemCtx+='- joinEvent: params: eventName, eventCode, userName\n';
+    systemCtx+='- addAvailability: params: date(YYYY-MM-DD), note?(טקסט חופשי)\n';
+    systemCtx+='- deleteAvailability: params: date(YYYY-MM-DD)\n';
+    systemCtx+='- setEventDates: params: dateFrom?(YYYY-MM-DD), dateTo?(YYYY-MM-DD) [רק למארגן]\n';
+    systemCtx+='- deleteEvent: [רק למארגן]\n';
+    systemCtx+='- navigate: params: screen (screen-home/screen-new/screen-join/screen-calendar)\n';
+    systemCtx+='- logout: התנתקות מהאירוע\n';
+    systemCtx+='- findBestDay: מצא את היום שהכי הרבה אנשים פנויים בו\n\n';
+    systemCtx+='חשוב: אם המשתמש שואל שאלה רגילה (לא מבקש פעולה), ענה בטקסט רגיל בלבד, לא JSON.\n';
+    systemCtx+='חשוב: כשמחזיר JSON, החזר JSON טהור בלבד ללא ```json או תוספות.\n\n';
+    systemCtx+='נתוני האירוע הנוכחי:\n'+buildContext();
 
     var recentHistory=chatHistory.slice(-10);
 
@@ -715,17 +957,30 @@ console.log('App ready');
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(body)
       });
+      if(!res.ok){
+        var errText = 'שגיאה מהשרת ('+res.status+'). נסה שוב.';
+        typing.textContent=errText;
+        typing.classList.remove('typing');
+        chatHistory.pop();
+        showToast('שגיאה בתקשורת עם הבוט','error');
+        sendBtn.disabled=false;input.focus();return;
+      }
       var data=await res.json();
       if(data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts[0].text){
-        var reply=data.candidates[0].content.parts[0].text;
+        var reply=data.candidates[0].content.parts[0].text.trim();
         typing.classList.remove('typing');
-        
-        // Attempt to parse as JSON for function calling
+
+        // Try to extract JSON from the reply (handle ```json blocks too)
+        var jsonStr=reply;
+        var jsonMatch=reply.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if(jsonMatch) jsonStr=jsonMatch[1].trim();
+
         try {
-          var command = JSON.parse(reply);
+          var command = JSON.parse(jsonStr);
           if (command.action) {
             handleAICommand(command);
-            typing.textContent = 'פקודה בוצעה: ' + command.action;
+            typing.textContent = command.message || ('פקודה בוצעה: ' + command.action);
+            chatHistory.push({role:'model',parts:[{text:command.message||reply}]});
           } else {
             typing.textContent = reply;
             chatHistory.push({role:'model',parts:[{text:reply}]});
@@ -736,7 +991,7 @@ console.log('App ready');
           chatHistory.push({role:'model',parts:[{text:reply}]});
         }
       }else if(data.error){
-        typing.textContent='שגיאה: '+data.error;
+        typing.textContent='שגיאה: '+(typeof data.error==='string'?data.error:JSON.stringify(data.error));
         typing.classList.remove('typing');
         chatHistory.pop();
       }else{
@@ -745,9 +1000,10 @@ console.log('App ready');
         chatHistory.pop();
       }
     }catch(e){
-      typing.textContent='שגיאה בחיבור לשרת. נסה שוב.';
+      typing.textContent='שגיאה בחיבור לשרת. בדוק את החיבור לאינטרנט ונסה שוב.';
       typing.classList.remove('typing');
       chatHistory.pop();
+      showToast('שגיאה בחיבור לשרת','error');
     }
     sendBtn.disabled=false;
     input.focus();
