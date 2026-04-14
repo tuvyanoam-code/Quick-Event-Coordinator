@@ -6,24 +6,7 @@
 <title>תאם אירוע</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet"/>
 
-<!-- ====== FIREBASE CONFIG ======
-  1. לך ל: https://console.firebase.google.com
-  2. צור פרויקט חדש
-  3. לחץ "Web" (</>), תן שם, לחץ Register
-  4. העתק את ה-firebaseConfig שמופיע ושנה את הערכים כאן למטה
-  5. בתפריט שמאל: Build > Realtime Database > Create database (בחר "Start in test mode")
-======================================
-
-====== EMAILJS CONFIG ======
-  לשליחת מייל אוטומטי:
-  1. לך ל: https://www.emailjs.com והירשם בחינם
-  2. צור Service (Gmail / Outlook) — תקבל SERVICE_ID
-  3. צור Template עם המשתנים: {{event_name}}, {{event_code}}, {{organizer_name}}, {{site_url}}
-     תקבל TEMPLATE_ID
-  4. בדף Account תמצא PUBLIC_KEY
-  5. הכנס את הערכים למטה ב-EMAILJS_CONFIG
-  אם לא מגדיר EmailJS — יעבוד רק כפתור "פתח בדואר" (mailto) כגיבוי.
--->
+<!-- ====== FIREBASE CONFIG ====== -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
@@ -37,9 +20,7 @@
     appId: "1:979701328018:web:55fbfe949fbdeb9b901e4b"
   };
   firebase.initializeApp(firebaseConfig);
-  const _db = firebase.database();
-  window._db = _db;
-  window.dispatchEvent(new Event('firebase-ready'));
+  window._db = firebase.database();
 </script>
 
 <style>
@@ -82,7 +63,6 @@ h1.logo{
 .screen.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-/* HOME */
 .home-cards{display:grid;gap:14px}
 .home-card{
   background:var(--card);
@@ -107,7 +87,6 @@ h1.logo{
 .home-card-text h2{font-size:17px;font-weight:500;margin-bottom:3px}
 .home-card-text p{font-size:13px;color:var(--muted)}
 
-/* FORM SCREENS */
 .card{
   background:var(--card);
   border-radius:var(--radius);
@@ -160,7 +139,6 @@ input[type=text]:focus{border-color:var(--accent2);background:#fff}
 }
 .copy-btn:hover{background:#d8f3dc}
 
-/* CALENDAR SCREEN */
 #screen-calendar{max-width:760px}
 .cal-header-row{
   display:flex;justify-content:space-between;align-items:center;
@@ -249,14 +227,14 @@ textarea:focus{border-color:var(--accent2);background:#fff}
 <!-- HOME -->
 <div class="screen active" id="screen-home">
   <div class="home-cards">
-    <div class="home-card" onclick="showScreen('screen-new')">
+    <div class="home-card" id="goNew">
       <div class="home-icon new">✨</div>
       <div class="home-card-text">
         <h2>תאם אירוע חדש</h2>
         <p>צור אירוע חדש וקבל קוד לשיתוף עם המוזמנים</p>
       </div>
     </div>
-    <div class="home-card" onclick="showScreen('screen-join')">
+    <div class="home-card" id="goJoin">
       <div class="home-icon join">🔗</div>
       <div class="home-card-text">
         <h2>הצטרף לאירוע קיים</h2>
@@ -268,7 +246,7 @@ textarea:focus{border-color:var(--accent2);background:#fff}
 
 <!-- NEW EVENT -->
 <div class="screen" id="screen-new">
-  <button class="back-btn" onclick="showScreen('screen-home')">← חזרה</button>
+  <button type="button" class="back-btn" id="backFromNew">← חזרה</button>
   <div class="card">
     <h2>אירוע חדש</h2>
     <p class="desc">בחר שם ייחודי לאירוע. משתתפים יזדקקו לשם ולקוד כדי להצטרף.</p>
@@ -279,21 +257,21 @@ textarea:focus{border-color:var(--accent2);background:#fff}
     <label>כתובת המייל שלך (לקבלת פרטי האירוע)</label>
     <input type="text" id="newOrgEmail" placeholder='לדוגמה: dani@gmail.com'/>
     <div class="err" id="newErr"></div>
-    <button class="btn" id="createBtn" onclick="createEvent()">צור אירוע</button>
+    <button type="button" class="btn" id="createBtn">צור אירוע</button>
     <div id="codeResult" style="display:none">
       <div class="code-box">
         <div>
           <div style="font-size:12px;color:var(--muted);margin-bottom:4px">קוד הגישה לאירוע:</div>
           <div class="code-val" id="codeDisplay"></div>
         </div>
-        <button class="copy-btn" onclick="copyCode()">העתק</button>
+        <button type="button" class="copy-btn" id="copyBtn">העתק</button>
       </div>
       <div id="emailSection" style="margin-top:14px">
         <div id="emailStatus" style="font-size:12px;padding:8px 12px;border-radius:8px;display:none;margin-bottom:8px"></div>
-        <button class="btn" id="sendEmailBtn" onclick="handleSendEmail()" style="background:var(--accent)">
+        <button type="button" class="btn" id="sendEmailBtn" style="background:var(--accent)">
           📧 שלח פרטים למייל שלי
         </button>
-        <button class="btn" id="openMailtoBtn" onclick="handleMailto()" style="margin-top:8px;background:#4b5563;display:none">
+        <button type="button" class="btn" id="openMailtoBtn" style="margin-top:8px;background:#4b5563;display:none">
           ✉️ פתח בתוכנת המייל
         </button>
       </div>
@@ -301,14 +279,14 @@ textarea:focus{border-color:var(--accent2);background:#fff}
         שלח את <strong>שם האירוע</strong> ואת <strong>הקוד</strong> למשתתפים.<br/>
         לחץ "המשך" כדי לפתוח את לוח הזמינות.
       </p>
-      <button class="btn" onclick="enterCalendar()">המשך ללוח ←</button>
+      <button type="button" class="btn" id="enterCalBtn">המשך ללוח ←</button>
     </div>
   </div>
 </div>
 
 <!-- JOIN EVENT -->
 <div class="screen" id="screen-join">
-  <button class="back-btn" onclick="showScreen('screen-home')">← חזרה</button>
+  <button type="button" class="back-btn" id="backFromJoin">← חזרה</button>
   <div class="card">
     <h2>הצטרף לאירוע</h2>
     <p class="desc">הזן את שם האירוע והקוד שקיבלת, ואת שמך.</p>
@@ -319,7 +297,7 @@ textarea:focus{border-color:var(--accent2);background:#fff}
     <label>שם שלך</label>
     <input type="text" id="joinUserName" placeholder='לדוגמה: יעל' maxlength="20"/>
     <div class="err" id="joinErr"></div>
-    <button class="btn" id="joinBtn" onclick="joinEvent()">הצטרף לאירוע</button>
+    <button type="button" class="btn" id="joinBtn">הצטרף לאירוע</button>
   </div>
 </div>
 
@@ -336,9 +314,9 @@ textarea:focus{border-color:var(--accent2);background:#fff}
   </div>
 
   <div class="month-nav">
-    <button class="nav-btn" id="prevMonth">&#8249;</button>
+    <button type="button" class="nav-btn" id="prevMonth">&#8249;</button>
     <h2 id="monthLabel"></h2>
-    <button class="nav-btn" id="nextMonth">&#8250;</button>
+    <button type="button" class="nav-btn" id="nextMonth">&#8250;</button>
   </div>
 
   <div class="grid" id="calGrid"></div>
@@ -353,17 +331,18 @@ textarea:focus{border-color:var(--accent2);background:#fff}
       <h3>הוספת זמינות</h3>
       <div class="hint">בחר יום בלוח ואז הוסף הערה.</div>
       <textarea id="noteInput" placeholder="למשל: פנוי 10:00–14:00"></textarea>
-      <button class="add-btn" id="addBtn" disabled onclick="addAvailability()">הוסף זמינות</button>
-      <button class="logout-btn" onclick="logout()">יציאה מהאירוע</button>
+      <button type="button" class="add-btn" id="addBtn" disabled>הוסף זמינות</button>
+      <button type="button" class="logout-btn" id="logoutBtn">יציאה מהאירוע</button>
     </div>
   </div>
 </div>
 
 <script>
-const COLORS=['#2d6a4f','#1e6091','#7b2d8b','#c05621','#b7791f','#276749','#2b6cb0','#6b46c1'];
-const DAY_NAMES=['א','ב','ג','ד','ה','ו','ש'];
+var COLORS=['#2d6a4f','#1e6091','#7b2d8b','#c05621','#b7791f','#276749','#2b6cb0','#6b46c1'];
+var DAY_NAMES=['א','ב','ג','ד','ה','ו','ש'];
+var db = window._db;
 
-let state={
+var state={
   eventKey:null, eventName:null, eventCode:null,
   user:null, users:{}, availability:{},
   month:new Date().getMonth(), year:new Date().getFullYear(), selected:null,
@@ -371,110 +350,124 @@ let state={
 };
 
 function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
 }
 
 function makeCode(){return String(Math.floor(1000+Math.random()*9000))}
 function slugify(s){return s.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_\u0590-\u05fe]/g,'')}
-function fmtKey(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function fmtKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function fmtLabel(d){return d.toLocaleDateString('he-IL',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
 
+// ── DB helpers (no wrappers, direct compat calls) ────────────
+function dbRef(path){ return db.ref(path); }
+function dbGet(path){
+  return new Promise(function(resolve, reject){
+    db.ref(path).once('value', function(snap){ resolve(snap); }, function(err){ reject(err); });
+  });
+}
+function dbSet(path, val){
+  return db.ref(path).set(val);
+}
+
 // ── CREATE EVENT ──────────────────────────────────────────────
-async function createEvent(){
-  const name=document.getElementById('newEventName').value.trim();
-  const org=document.getElementById('newOrgName').value.trim();
-  const errEl=document.getElementById('newErr');
+function createEvent(){
+  var name=document.getElementById('newEventName').value.trim();
+  var org=document.getElementById('newOrgName').value.trim();
+  var errEl=document.getElementById('newErr');
   if(!name){errEl.textContent='נא להזין שם אירוע';return}
   if(!org){errEl.textContent='נא להזין שמך';return}
   errEl.textContent='';
-  const btn=document.getElementById('createBtn');
-  const origText=btn.textContent;
+  var btn=document.getElementById('createBtn');
   btn.disabled=true;
   btn.textContent='יוצר אירוע...';
 
-  try{
-    const db=window._db;
-    const key=slugify(name)||'event';
-    const existing=await db.ref('events/'+key).once('value');
+  var key=slugify(name)||'event';
+
+  dbGet('events/'+key).then(function(existing){
     if(existing.exists()){
       errEl.textContent='קיים כבר אירוע עם שם זה. בחר שם אחר.';
       btn.disabled=false;
-      btn.textContent=origText;
+      btn.textContent='צור אירוע';
       return;
     }
-    const code=makeCode();
-    const color=COLORS[0];
-    const userId='u_'+Date.now();
-    await db.ref('events/'+key).set({name:name,code:code,createdAt:Date.now()});
-    await db.ref('events/'+key+'/users/'+userId).set({name:org,color:color});
+    var code=makeCode();
+    var color=COLORS[0];
+    var userId='u_'+Date.now();
 
-    state.eventKey=key; state.eventName=name; state.eventCode=code;
-    state.user={id:userId,name:org,color:color};
-    document.getElementById('codeDisplay').textContent=code;
-    document.getElementById('codeResult').style.display='block';
-    btn.style.display='none';
-  }catch(e){
-    console.error('createEvent error:',e);
+    return dbSet('events/'+key, {name:name, code:code, createdAt:Date.now()}).then(function(){
+      return dbSet('events/'+key+'/users/'+userId, {name:org, color:color});
+    }).then(function(){
+      state.eventKey=key;
+      state.eventName=name;
+      state.eventCode=code;
+      state.user={id:userId, name:org, color:color};
+      document.getElementById('codeDisplay').textContent=code;
+      document.getElementById('codeResult').style.display='block';
+      btn.style.display='none';
+    });
+  }).catch(function(e){
+    console.error('createEvent error:', e);
     errEl.textContent='שגיאה ביצירת האירוע: '+e.message;
     btn.disabled=false;
-    btn.textContent=origText;
-  }
-}
-
-function copyCode(){
-  navigator.clipboard.writeText(state.eventCode).then(()=>{
-    const b=document.querySelector('.copy-btn');b.textContent='הועתק ✓';setTimeout(()=>b.textContent='העתק',2000);
+    btn.textContent='צור אירוע';
   });
 }
 
-async function handleSendEmail(){
-  const email=document.getElementById('newOrgEmail').value.trim();
-  if(!email){showEmailStatus('נא להזין כתובת מייל בשדה למעלה','#dc2626','#fef2f2');return;}
-  const btn=document.getElementById('sendEmailBtn');
-  btn.disabled=true; btn.textContent='שולח...';
-  try{
-    const result=await sendEventEmail(email,state.eventName,state.eventCode,state.user.name);
+function copyCode(){
+  navigator.clipboard.writeText(state.eventCode).then(function(){
+    var b=document.getElementById('copyBtn');
+    b.textContent='הועתק ✓';
+    setTimeout(function(){b.textContent='העתק'},2000);
+  });
+}
+
+function handleSendEmail(){
+  var email=document.getElementById('newOrgEmail').value.trim();
+  if(!email){showEmailStatus('נא להזין כתובת מייל בשדה למעלה','#dc2626','#fef2f2');return}
+  var btn=document.getElementById('sendEmailBtn');
+  btn.disabled=true;
+  btn.textContent='שולח...';
+
+  sendEventEmail(email, state.eventName, state.eventCode, state.user.name).then(function(result){
     if(result.ok){
       showEmailStatus('✓ המייל נשלח בהצלחה!','#166534','#f0fdf4');
       btn.textContent='📧 נשלח ✓';
-    } else {
-      if(result.fallback){
-        showEmailStatus('EmailJS לא מוגדר — לחץ על "פתח בתוכנת המייל" כגיבוי','#92400e','#fffbeb');
-        document.getElementById('openMailtoBtn').style.display='block';
-        btn.textContent='📧 שלח פרטים למייל שלי';
-        btn.disabled=false;
-      }
+    } else if(result.fallback){
+      showEmailStatus('EmailJS לא מוגדר — לחץ על "פתח בתוכנת המייל" כגיבוי','#92400e','#fffbeb');
+      document.getElementById('openMailtoBtn').style.display='block';
+      btn.textContent='📧 שלח פרטים למייל שלי';
+      btn.disabled=false;
     }
-  }catch(e){
+  }).catch(function(e){
     console.error('handleSendEmail error:',e);
     showEmailStatus('שגיאה בשליחת המייל. נסה שוב.','#dc2626','#fef2f2');
     btn.textContent='📧 שלח פרטים למייל שלי';
     btn.disabled=false;
-  }
+  });
 }
 
 function handleMailto(){
-  const email=document.getElementById('newOrgEmail').value.trim();
-  const siteUrl=window.location.href.split('?')[0];
-  const subject=encodeURIComponent(`פרטי האירוע: ${state.eventName}`);
-  const body=encodeURIComponent(
-    `שלום ${state.user.name},\n\n`+
-    `יצרת אירוע חדש:\n`+
-    `שם האירוע: ${state.eventName}\n`+
-    `קוד גישה: ${state.eventCode}\n\n`+
-    `קישור לאתר: ${siteUrl}\n\n`+
-    `שלח את שם האירוע והקוד למשתתפים.\n`+
-    `הם יכנסו ל"הצטרף לאירוע קיים" ויזינו את הפרטים.`
+  var email=document.getElementById('newOrgEmail').value.trim();
+  var siteUrl=window.location.href.split('?')[0];
+  var subject=encodeURIComponent('פרטי האירוע: '+state.eventName);
+  var body=encodeURIComponent(
+    'שלום '+state.user.name+',\n\n'+
+    'יצרת אירוע חדש:\n'+
+    'שם האירוע: '+state.eventName+'\n'+
+    'קוד גישה: '+state.eventCode+'\n\n'+
+    'קישור לאתר: '+siteUrl+'\n\n'+
+    'שלח את שם האירוע והקוד למשתתפים.\n'+
+    'הם יכנסו ל"הצטרף לאירוע קיים" ויזינו את הפרטים.'
   );
-  window.open(`mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`);
+  window.open('mailto:'+encodeURIComponent(email)+'?subject='+subject+'&body='+body);
 }
 
 function showEmailStatus(msg,color,bg){
-  const el=document.getElementById('emailStatus');
+  var el=document.getElementById('emailStatus');
   el.textContent=msg; el.style.color=color; el.style.background=bg;
-  el.style.border=`1px solid ${color}40`; el.style.display='block';
+  el.style.border='1px solid '+color+'40'; el.style.display='block';
 }
 
 function enterCalendar(){
@@ -483,148 +476,155 @@ function enterCalendar(){
 }
 
 // ── JOIN EVENT ────────────────────────────────────────────────
-async function joinEvent(){
-  const eName=document.getElementById('joinEventName').value.trim();
-  const code=document.getElementById('joinCode').value.trim();
-  const uName=document.getElementById('joinUserName').value.trim();
-  const errEl=document.getElementById('joinErr');
+function joinEvent(){
+  var eName=document.getElementById('joinEventName').value.trim();
+  var code=document.getElementById('joinCode').value.trim();
+  var uName=document.getElementById('joinUserName').value.trim();
+  var errEl=document.getElementById('joinErr');
   if(!eName||!code||!uName){errEl.textContent='נא למלא את כל השדות';return}
   errEl.textContent='';
-  const btn=document.getElementById('joinBtn');
-  const origText=btn.textContent;
+  var btn=document.getElementById('joinBtn');
   btn.disabled=true;
   btn.textContent='מתחבר...';
 
-  try{
-    const db=window._db;
-    const key=slugify(eName)||'event';
-    const snap=await db.ref('events/'+key).once('value');
-    if(!snap.exists()){errEl.textContent='האירוע לא נמצא. בדוק את השם.';btn.disabled=false;btn.textContent=origText;return}
-    const ev=snap.val();
-    if(ev.code!==code){errEl.textContent='קוד שגוי.';btn.disabled=false;btn.textContent=origText;return}
+  var key=slugify(eName)||'event';
 
-    const usersSnap=await db.ref('events/'+key+'/users').once('value');
-    let user=null;
-    let colorIdx=0;
-    if(usersSnap.exists()){
-      const usersData=usersSnap.val();
-      colorIdx=Object.keys(usersData).length;
-      const existing=Object.entries(usersData).find(([,u])=>u.name===uName);
-      if(existing){user={id:existing[0],...existing[1]}}
-    }
-    if(!user){
-      const userId='u_'+Date.now();
-      const color=COLORS[colorIdx%COLORS.length];
-      await db.ref('events/'+key+'/users/'+userId).set({name:uName,color:color});
-      user={id:userId,name:uName,color:color};
-    }
+  dbGet('events/'+key).then(function(snap){
+    if(!snap.exists()){errEl.textContent='האירוע לא נמצא. בדוק את השם.';btn.disabled=false;btn.textContent='הצטרף לאירוע';return}
+    var ev=snap.val();
+    if(ev.code!==code){errEl.textContent='קוד שגוי.';btn.disabled=false;btn.textContent='הצטרף לאירוע';return}
 
-    state.eventKey=key; state.eventName=ev.name; state.eventCode=code;
-    state.user=user;
-    btn.disabled=false;
-    btn.textContent=origText;
-    startCalendar();
-    showScreen('screen-calendar');
-  }catch(e){
+    return dbGet('events/'+key+'/users').then(function(usersSnap){
+      var user=null;
+      var colorIdx=0;
+      if(usersSnap.exists()){
+        var usersData=usersSnap.val();
+        colorIdx=Object.keys(usersData).length;
+        var found=Object.entries(usersData).find(function(entry){return entry[1].name===uName});
+        if(found){user={id:found[0], name:found[1].name, color:found[1].color}}
+      }
+
+      var p = Promise.resolve();
+      if(!user){
+        var userId='u_'+Date.now();
+        var color=COLORS[colorIdx%COLORS.length];
+        user={id:userId, name:uName, color:color};
+        p = dbSet('events/'+key+'/users/'+userId, {name:uName, color:color});
+      }
+
+      return p.then(function(){
+        state.eventKey=key;
+        state.eventName=ev.name;
+        state.eventCode=code;
+        state.user=user;
+        btn.disabled=false;
+        btn.textContent='הצטרף לאירוע';
+        startCalendar();
+        showScreen('screen-calendar');
+      });
+    });
+  }).catch(function(e){
     console.error('joinEvent error:',e);
     errEl.textContent='שגיאה בהצטרפות: '+e.message;
     btn.disabled=false;
-    btn.textContent=origText;
-  }
+    btn.textContent='הצטרף לאירוע';
+  });
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────
 function startCalendar(){
-  const db=window._db;
-  if(state.unsubscribe)state.unsubscribe();
+  if(state.unsubscribe) state.unsubscribe();
 
   document.getElementById('calEventBadge').textContent='📅 '+state.eventName;
   document.getElementById('calUserDot').style.background=state.user.color;
   document.getElementById('calUserName').textContent=state.user.name;
 
-  // live sync
-  const evRef=db.ref('events/'+state.eventKey);
-  const cb=function(snap){
-    const data=snap.val()||{};
+  var evRef=db.ref('events/'+state.eventKey);
+  var cb=function(snap){
+    var data=snap.val()||{};
     state.users=data.users||{};
     state.availability=data.availability||{};
     renderCal();
     renderSel();
   };
-  evRef.on('value',cb);
-  state.unsubscribe=function(){ evRef.off('value',cb); };
+  evRef.on('value', cb);
+  state.unsubscribe=function(){ evRef.off('value', cb); };
 
-  document.getElementById('prevMonth').onclick=()=>{state.month--;if(state.month<0){state.month=11;state.year--}renderCal();renderSel()};
-  document.getElementById('nextMonth').onclick=()=>{state.month++;if(state.month>11){state.month=0;state.year++}renderCal();renderSel()};
+  document.getElementById('prevMonth').onclick=function(){state.month--;if(state.month<0){state.month=11;state.year--}renderCal();renderSel()};
+  document.getElementById('nextMonth').onclick=function(){state.month++;if(state.month>11){state.month=0;state.year++}renderCal();renderSel()};
 }
 
 function renderCal(){
-  const grid=document.getElementById('calGrid');
+  var grid=document.getElementById('calGrid');
   grid.innerHTML='';
-  DAY_NAMES.forEach(n=>{const d=document.createElement('div');d.className='dn';d.textContent=n;grid.appendChild(d)});
-  const first=new Date(state.year,state.month,1);
-  const days=new Date(state.year,state.month+1,0).getDate();
-  const start=(first.getDay()+6)%7;
+  DAY_NAMES.forEach(function(n){var d=document.createElement('div');d.className='dn';d.textContent=n;grid.appendChild(d)});
+  var first=new Date(state.year,state.month,1);
+  var days=new Date(state.year,state.month+1,0).getDate();
+  var start=(first.getDay()+6)%7;
   document.getElementById('monthLabel').textContent=first.toLocaleDateString('he-IL',{month:'long',year:'numeric'});
-  for(let i=0;i<start;i++){const e=document.createElement('div');e.className='day empty';grid.appendChild(e)}
-  const todayKey=fmtKey(new Date());
-  for(let d=1;d<=days;d++){
-    const date=new Date(state.year,state.month,d);
-    const key=fmtKey(date);
-    const div=document.createElement('div');div.className='day';
-    if(key===todayKey)div.classList.add('today');
-    if(state.selected&&fmtKey(state.selected)===key)div.classList.add('sel');
-    const num=document.createElement('div');num.className='dnum';num.textContent=d;div.appendChild(num);
-    const dotsDiv=document.createElement('div');dotsDiv.className='dots';
-    (state.availability[key]||[]).forEach(e=>{
-      const u=state.users[e.userId];if(!u)return;
-      const dot=document.createElement('div');dot.className='dot';dot.style.background=u.color;dotsDiv.appendChild(dot);
-    });
-    div.appendChild(dotsDiv);
-    div.addEventListener('click',()=>{state.selected=date;renderCal();renderSel()});
-    grid.appendChild(div);
+  for(var i=0;i<start;i++){var e=document.createElement('div');e.className='day empty';grid.appendChild(e)}
+  var todayKey=fmtKey(new Date());
+  for(var d=1;d<=days;d++){
+    (function(d){
+      var date=new Date(state.year,state.month,d);
+      var key=fmtKey(date);
+      var div=document.createElement('div');div.className='day';
+      if(key===todayKey)div.classList.add('today');
+      if(state.selected&&fmtKey(state.selected)===key)div.classList.add('sel');
+      var num=document.createElement('div');num.className='dnum';num.textContent=d;div.appendChild(num);
+      var dotsDiv=document.createElement('div');dotsDiv.className='dots';
+      var avail=state.availability[key]||[];
+      for(var j=0;j<avail.length;j++){
+        var u=state.users[avail[j].userId];if(!u)continue;
+        var dot=document.createElement('div');dot.className='dot';dot.style.background=u.color;dotsDiv.appendChild(dot);
+      }
+      div.appendChild(dotsDiv);
+      div.addEventListener('click',function(){state.selected=date;renderCal();renderSel()});
+      grid.appendChild(div);
+    })(d);
   }
 }
 
 function renderSel(){
-  const addBtn=document.getElementById('addBtn');
+  var addBtn=document.getElementById('addBtn');
   if(!state.selected){document.getElementById('selLabel').textContent='לא נבחר יום';document.getElementById('avList').innerHTML='';addBtn.disabled=true;return}
-  const key=fmtKey(state.selected);
+  var key=fmtKey(state.selected);
   document.getElementById('selLabel').textContent=fmtLabel(state.selected);
-  const entries=state.availability[key]||[];
-  const list=document.getElementById('avList');list.innerHTML='';
+  var entries=state.availability[key]||[];
+  var list=document.getElementById('avList');list.innerHTML='';
   if(!entries.length){list.innerHTML='<span style="color:var(--muted)">אין זמינות ליום זה</span>';}
-  else{entries.forEach(e=>{
-    const u=state.users[e.userId];if(!u)return;
-    const item=document.createElement('div');item.className='av-item';
-    item.innerHTML=`<div class="av-color" style="background:${u.color}"></div><div class="av-text"><strong>${u.name}</strong>${e.note?' – '+e.note:''}</div>`;
-    list.appendChild(item);
-  });}
+  else{
+    for(var i=0;i<entries.length;i++){
+      var u=state.users[entries[i].userId];if(!u)continue;
+      var item=document.createElement('div');item.className='av-item';
+      item.innerHTML='<div class="av-color" style="background:'+u.color+'"></div><div class="av-text"><strong>'+u.name+'</strong>'+(entries[i].note?' – '+entries[i].note:'')+'</div>';
+      list.appendChild(item);
+    }
+  }
   addBtn.disabled=false;
 }
 
-async function addAvailability(){
+function addAvailability(){
   if(!state.selected)return;
-  const key=fmtKey(state.selected);
-  const note=document.getElementById('noteInput').value.trim();
-  const addBtn=document.getElementById('addBtn');
+  var key=fmtKey(state.selected);
+  var note=document.getElementById('noteInput').value.trim();
+  var addBtn=document.getElementById('addBtn');
   addBtn.disabled=true;
   addBtn.textContent='שומר...';
 
-  try{
-    const db=window._db;
-    const snap=await db.ref('events/'+state.eventKey+'/availability/'+key).once('value');
-    const entries=snap.exists()?snap.val():[];
-    entries.push({userId:state.user.id,note:note});
-    await db.ref('events/'+state.eventKey+'/availability/'+key).set(entries);
+  dbGet('events/'+state.eventKey+'/availability/'+key).then(function(snap){
+    var entries=snap.exists()?snap.val():[];
+    entries.push({userId:state.user.id, note:note});
+    return dbSet('events/'+state.eventKey+'/availability/'+key, entries);
+  }).then(function(){
     document.getElementById('noteInput').value='';
-  }catch(e){
+  }).catch(function(e){
     console.error('addAvailability error:',e);
     alert('שגיאה בשמירת הזמינות: '+e.message);
-  }finally{
+  }).finally(function(){
     addBtn.disabled=false;
     addBtn.textContent='הוסף זמינות';
-  }
+  });
 }
 
 function logout(){
@@ -637,9 +637,10 @@ function logout(){
   document.getElementById('joinCode').value='';
   document.getElementById('joinUserName').value='';
   document.getElementById('codeResult').style.display='none';
-  document.getElementById('createBtn').style.display='';
-  document.getElementById('createBtn').disabled=false;
-  document.getElementById('createBtn').textContent='צור אירוע';
+  var createBtn=document.getElementById('createBtn');
+  createBtn.style.display='';
+  createBtn.disabled=false;
+  createBtn.textContent='צור אירוע';
   document.getElementById('sendEmailBtn').textContent='📧 שלח פרטים למייל שלי';
   document.getElementById('sendEmailBtn').disabled=false;
   document.getElementById('openMailtoBtn').style.display='none';
@@ -647,62 +648,68 @@ function logout(){
   showScreen('screen-home');
 }
 
-window.addEventListener('firebase-ready',()=>{console.log('Firebase connected')});
+// ── Wire up ALL event listeners (no inline onclick) ──────────
+document.getElementById('goNew').addEventListener('click', function(){ showScreen('screen-new'); });
+document.getElementById('goJoin').addEventListener('click', function(){ showScreen('screen-join'); });
+document.getElementById('backFromNew').addEventListener('click', function(){ showScreen('screen-home'); });
+document.getElementById('backFromJoin').addEventListener('click', function(){ showScreen('screen-home'); });
+document.getElementById('createBtn').addEventListener('click', function(){ createEvent(); });
+document.getElementById('copyBtn').addEventListener('click', function(){ copyCode(); });
+document.getElementById('sendEmailBtn').addEventListener('click', function(){ handleSendEmail(); });
+document.getElementById('openMailtoBtn').addEventListener('click', function(){ handleMailto(); });
+document.getElementById('enterCalBtn').addEventListener('click', function(){ enterCalendar(); });
+document.getElementById('joinBtn').addEventListener('click', function(){ joinEvent(); });
+document.getElementById('addBtn').addEventListener('click', function(){ addAvailability(); });
+document.getElementById('logoutBtn').addEventListener('click', function(){ logout(); });
+
+console.log('App ready');
 </script>
 
 <!-- EmailJS SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
-// *** הגדר כאן את פרטי EmailJS שלך ***
-const EMAILJS_CONFIG = {
-  publicKey:  'YOUR_PUBLIC_KEY',   // מ-Account > API Keys
-  serviceId:  'YOUR_SERVICE_ID',   // מ-Email Services
-  templateId: 'YOUR_TEMPLATE_ID'   // מ-Email Templates
+var EMAILJS_CONFIG = {
+  publicKey:  'YOUR_PUBLIC_KEY',
+  serviceId:  'YOUR_SERVICE_ID',
+  templateId: 'YOUR_TEMPLATE_ID'
 };
 
-const EMAILJS_READY = EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY';
+var EMAILJS_READY = EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY';
 if(EMAILJS_READY) emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
 
-// שליחת מייל לאחר יצירת אירוע
-async function sendEventEmail(toEmail, eventName, code, organizerName) {
-  const siteUrl = window.location.href.split('?')[0];
-  const subject = encodeURIComponent(`הזמנה לתאם אירוע: ${eventName}`);
-  const bodyLines = [
-    `שלום,`,
-    ``,
-    `${organizerName} מזמין/ת אותך לתאם זמינות לאירוע: ${eventName}`,
-    ``,
-    `שם האירוע: ${eventName}`,
-    `קוד גישה: ${code}`,
-    ``,
-    `כדי להצטרף היכנס לאתר: ${siteUrl}`,
-    `לחץ על "הצטרף לאירוע קיים" והזן את שם האירוע והקוד.`,
-    ``,
-    `בברכה,`,
-    `${organizerName}`
+function sendEventEmail(toEmail, eventName, code, organizerName) {
+  var siteUrl = window.location.href.split('?')[0];
+  var subject = encodeURIComponent('הזמנה לתאם אירוע: '+eventName);
+  var bodyLines = [
+    'שלום,',
+    '',
+    organizerName+' מזמין/ת אותך לתאם זמינות לאירוע: '+eventName,
+    '',
+    'שם האירוע: '+eventName,
+    'קוד גישה: '+code,
+    '',
+    'כדי להצטרף היכנס לאתר: '+siteUrl,
+    'לחץ על "הצטרף לאירוע קיים" והזן את שם האירוע והקוד.',
+    '',
+    'בברכה,',
+    organizerName
   ].join('\n');
 
   if(EMAILJS_READY) {
-    try {
-      await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
-        to_email: toEmail,
-        event_name: eventName,
-        event_code: code,
-        organizer_name: organizerName,
-        site_url: siteUrl
-      });
+    return emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+      to_email: toEmail,
+      event_name: eventName,
+      event_code: code,
+      organizer_name: organizerName,
+      site_url: siteUrl
+    }).then(function(){
       return { ok: true };
-    } catch(e) {
+    }).catch(function(e){
       console.error('EmailJS error:', e);
-      return { ok: false, fallback: true, subject, body: bodyLines };
-    }
+      return { ok: false, fallback: true, subject: subject, body: bodyLines };
+    });
   }
-  // גיבוי: פתח mailto
-  return { ok: false, fallback: true, subject, body: encodeURIComponent(bodyLines) };
-}
-
-function openMailto(email, subject, body) {
-  window.open(`mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`);
+  return Promise.resolve({ ok: false, fallback: true, subject: subject, body: encodeURIComponent(bodyLines) });
 }
 </script>
 </body>
