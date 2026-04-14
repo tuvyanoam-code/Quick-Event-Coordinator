@@ -572,7 +572,7 @@ console.log('App ready');
     var typing=addMsg('מקליד...','bot');
     typing.classList.add('typing');
 
-    var systemCtx='אתה עוזר AI ידידותי לאפליקציית תיאום זמינות קבוצתית. ענה תמיד בעברית בצורה קצרה וברורה.\n\nנתוני האירוע הנוכחי:\n'+buildContext();
+    var systemCtx='אתה עוזר AI ידידותי לאפליקציית תיאום זמינות קבוצתית. ענה בשפה שבה המשתמש פונה אליך. ענה בצורה קצרה וברורה.\n\nנתוני האירוע הנוכחי:\n'+buildContext();
 
     var recentHistory=chatHistory.slice(-10);
 
