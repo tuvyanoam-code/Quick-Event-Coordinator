@@ -21,10 +21,16 @@
 <div id="toast-container"></div>
 <div class="loader-overlay" id="loader-overlay"><div class="loader"></div></div>
 
-<!-- Top header with theme toggle + sign-in/out -->
+<!-- Top header with theme toggle + sign-in/account menu -->
 <div class="app-header">
   <button class="header-btn" id="headerSignInBtn" onclick="signInWithGoogle(false)" title="התחבר עם Google">🔑 התחבר</button>
-  <button class="header-btn" id="headerSignOutBtn" onclick="signOutUser()" style="display:none;" title="התנתק"></button>
+  <div class="user-menu-wrap" id="userMenuWrap" style="display:none;">
+    <button class="header-btn" id="headerSignOutBtn" onclick="toggleUserMenu(event)" title="חשבון" aria-haspopup="true" aria-expanded="false"></button>
+    <div class="user-menu" id="userMenu" role="menu" hidden>
+      <button class="user-menu-item" role="menuitem" onclick="userMenuGrantCalendar()">📅 הענק הרשאות יומן Google</button>
+      <button class="user-menu-item" role="menuitem" onclick="userMenuSignOut()">🚪 ניתוק</button>
+    </div>
+  </div>
   <div class="theme-toggle" id="theme-toggle"></div>
 </div>
 

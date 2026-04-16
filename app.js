@@ -98,25 +98,87 @@ function showScreen(screenId) {
   window.scrollTo(0, 0);
 }
 
-// Theme toggle
+// Theme: automatic based on sunset/sunrise at user's location.
+// Manual toggle overrides until the page is refreshed.
 var themeToggle = document.getElementById('theme-toggle');
-var currentTheme = localStorage.getItem('theme');
+var THEME_LOC_KEY = 'theme-location';
+var THEME_DEFAULT_LOC = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv fallback
+var themeManualOverride = false;
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('theme', theme);
   themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
 }
 
-if (currentTheme) {
-  applyTheme(currentTheme);
-} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-  applyTheme('dark');
-} else {
-  applyTheme('light');
+// NOAA sunrise/sunset algorithm. Returns UTC hours (decimal) for the given date.
+function computeSunTimes(date, lat, lng) {
+  var rad = Math.PI / 180;
+  var deg = 180 / Math.PI;
+  var start = Date.UTC(date.getUTCFullYear(), 0, 0);
+  var n = Math.floor((date.getTime() - start) / 86400000);
+  var lngHour = lng / 15;
+  var zenith = 90.833; // official sunrise/sunset
+
+  function calc(isSunrise) {
+    var t = n + ((isSunrise ? 6 : 18) - lngHour) / 24;
+    var M = (0.9856 * t) - 3.289;
+    var L = M + (1.916 * Math.sin(rad * M)) + (0.020 * Math.sin(rad * 2 * M)) + 282.634;
+    L = (L + 360) % 360;
+    var RA = deg * Math.atan(0.91764 * Math.tan(rad * L));
+    RA = (RA + 360) % 360;
+    var Lq = Math.floor(L / 90) * 90;
+    var RAq = Math.floor(RA / 90) * 90;
+    RA = (RA + (Lq - RAq)) / 15;
+    var sinDec = 0.39782 * Math.sin(rad * L);
+    var cosDec = Math.cos(Math.asin(sinDec));
+    var cosH = (Math.cos(rad * zenith) - (sinDec * Math.sin(rad * lat))) / (cosDec * Math.cos(rad * lat));
+    if (cosH > 1 || cosH < -1) return null;
+    var H = (isSunrise ? 360 - deg * Math.acos(cosH) : deg * Math.acos(cosH)) / 15;
+    var T = H + RA - (0.06571 * t) - 6.622;
+    return (T - lngHour + 24) % 24;
+  }
+
+  return { sunriseUT: calc(true), sunsetUT: calc(false) };
 }
 
+function isNightNow(lat, lng) {
+  var now = new Date();
+  var times = computeSunTimes(now, lat, lng);
+  if (times.sunriseUT == null || times.sunsetUT == null) {
+    // Polar day/night — fall back to local clock
+    var h = now.getHours();
+    return h < 6 || h >= 18;
+  }
+  var nowUT = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
+  return nowUT < times.sunriseUT || nowUT >= times.sunsetUT;
+}
+
+function autoApplyTheme() {
+  if (themeManualOverride) return;
+  var loc;
+  try { loc = JSON.parse(localStorage.getItem(THEME_LOC_KEY)); } catch (e) {}
+  if (!loc || typeof loc.lat !== 'number') loc = THEME_DEFAULT_LOC;
+  applyTheme(isNightNow(loc.lat, loc.lng) ? 'dark' : 'light');
+}
+
+autoApplyTheme();
+
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    localStorage.setItem(THEME_LOC_KEY, JSON.stringify({
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude
+    }));
+    autoApplyTheme();
+  }, function() { /* denied — keep cached or default */ },
+  { timeout: 8000, maximumAge: 86400000 });
+}
+
+// Re-check every 5 minutes so the theme flips automatically at sunrise/sunset.
+setInterval(autoApplyTheme, 5 * 60 * 1000);
+
 themeToggle.addEventListener('click', function() {
+  themeManualOverride = true;
   var newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   applyTheme(newTheme);
 });
