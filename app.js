@@ -154,7 +154,8 @@ function createEvent() {
 
   showLoader();
   var eventKey = window._db.ref('events').push().key;
-  var eventCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  // 4-digit numeric code — easier to share verbally than an alphanumeric blob
+  var eventCode = String(Math.floor(1000 + Math.random() * 9000));
   var organizerColor = getRandomColor();
 
   var newEvent = {
@@ -200,6 +201,10 @@ function createEvent() {
       document.getElementById('sendEmailBtn').style.display = 'block';
       document.getElementById('openMailtoBtn').style.display = 'none';
       document.getElementById('emailStatus').style.display = 'none';
+      // Hide the "Create" button now that creation succeeded
+      document.getElementById('createBtn').style.display = 'none';
+      // Scroll the code + share block into view on small screens
+      document.getElementById('codeResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
       listenToEvent(eventKey);
     })
     .catch(function(error) {
@@ -213,7 +218,7 @@ function createEvent() {
 function joinEvent() {
   showLoader();
   var eventName = document.getElementById('joinEventName').value.trim();
-  var eventCode = document.getElementById('joinCode').value.trim().toUpperCase();
+  var eventCode = document.getElementById('joinCode').value.trim();
   var userName = document.getElementById('joinUserName').value.trim();
 
   if (!eventName || !eventCode || !userName) {
