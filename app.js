@@ -33,7 +33,15 @@ var state = {
 
 // Utility functions (fmtKey, fmtLabel, showToast, showScreen, etc.)
 function fmtKey(date) {
-  return date.toISOString().split('T')[0];
+  return date.getFullYear() + '-' +
+    String(date.getMonth() + 1).padStart(2, '0') + '-' +
+    String(date.getDate()).padStart(2, '0');
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
 }
 
 function fmtLabel(date) {
@@ -129,7 +137,6 @@ function dbRemove(path) {
 
 // Core event logic (createEvent, joinEvent, renderCal, renderSel, addAvailability, deleteEvent, logout, etc.)
 function createEvent() {
-  showLoader();
   var eventName = document.getElementById('newEventName').value.trim();
   var organizerName = document.getElementById('newOrgName').value.trim();
   var organizerEmail = document.getElementById('newOrgEmail').value.trim();
@@ -138,12 +145,17 @@ function createEvent() {
 
   if (!eventName || !organizerName) {
     showToast('שם אירוע ושם מארגן הם שדות חובה.', 'error');
-    hideLoader();
+    return;
+  }
+  if (dateFrom && dateTo && dateFrom > dateTo) {
+    showToast('תאריך ההתחלה חייב להיות לפני תאריך הסיום.', 'error');
     return;
   }
 
+  showLoader();
   var eventKey = window._db.ref('events').push().key;
   var eventCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  var organizerColor = getRandomColor();
 
   var newEvent = {
     name: eventName,
@@ -155,13 +167,25 @@ function createEvent() {
     code: eventCode,
     dateFrom: dateFrom || null,
     dateTo: dateTo || null,
-    createdAt: firebase.database.ServerValue.TIMESTAMP
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    // IMPORTANT: register organizer in users node so their dots/notes render
+    users: (function() {
+      var u = {};
+      u[state.user.id] = { name: organizerName, color: organizerColor };
+      return u;
+    })()
   };
+
+  // Keep the organizer's chosen display-name locally too
+  state.user.name = organizerName;
+  state.user.color = organizerColor;
 
   dbSet('events/' + eventKey, newEvent)
     .then(function() {
-      // Link event to organizer's profile
-      return dbSet('users/' + state.user.id + '/events/' + eventKey, { role: 'admin', eventName: eventName });
+      // Link event to organizer's profile (only if authenticated; guests can skip)
+      if (!state.isGuest) {
+        return dbSet('users/' + state.user.id + '/events/' + eventKey, { role: 'admin', eventName: eventName });
+      }
     })
     .then(function() {
       state.eventKey = eventKey;
@@ -176,7 +200,6 @@ function createEvent() {
       document.getElementById('sendEmailBtn').style.display = 'block';
       document.getElementById('openMailtoBtn').style.display = 'none';
       document.getElementById('emailStatus').style.display = 'none';
-      showScreen('screen-calendar');
       listenToEvent(eventKey);
     })
     .catch(function(error) {
@@ -219,14 +242,20 @@ function joinEvent() {
       dbGet('events/' + foundEventKey + '/users/' + state.user.id).then(function(userSnap) {
         if (!userSnap.exists()) {
           var userColor = getRandomColor();
+          state.user.name = userName;
+          state.user.color = userColor;
           return dbSet('events/' + foundEventKey + '/users/' + state.user.id, { name: userName, color: userColor });
         } else {
-          // Update name if user already exists
+          // Update name if user already exists; preserve color
+          state.user.name = userName;
+          state.user.color = userSnap.val().color;
           return dbUpdate('events/' + foundEventKey + '/users/' + state.user.id, { name: userName });
         }
       }).then(function() {
-        // Link event to user's profile
-        return dbSet('users/' + state.user.id + '/events/' + foundEventKey, { role: 'participant', eventName: eventName });
+        // Link event to user's profile only for authenticated users
+        if (!state.isGuest) {
+          return dbSet('users/' + state.user.id + '/events/' + foundEventKey, { role: 'participant', eventName: eventName });
+        }
       }).then(function() {
         showToast('הצטרפת לאירוע בהצלחה!', 'success');
         showScreen('screen-calendar');
@@ -247,7 +276,7 @@ function listenToEvent(eventKey) {
 
   var eventRef = window._db.ref('events/' + eventKey);
 
-  state.unsubscribe = eventRef.on('value', function(snapshot) {
+  var cb = function(snapshot) {
     var eventData = snapshot.val();
     if (!eventData) {
       showToast('האירוע נמחק או אינו קיים.', 'error');
@@ -274,10 +303,13 @@ function listenToEvent(eventKey) {
     renderSel();
     updateAdminPanel();
     updateEventHeader();
-  }, function(error) {
+  };
+  var errCb = function(error) {
     console.error('Firebase listen error:', error);
     showToast('שגיאה בטעינת נתוני אירוע: ' + error.message, 'error');
-  });
+  };
+  eventRef.on('value', cb, errCb);
+  state.unsubscribe = function() { eventRef.off('value', cb); };
 }
 
 function updateEventHeader() {
@@ -286,7 +318,13 @@ function updateEventHeader() {
   document.getElementById('eventAdminBadge').style.display = state.isAdmin ? 'inline-block' : 'none';
   document.getElementById('adminPanel').style.display = state.isAdmin ? 'block' : 'none';
   document.getElementById('logoutBtn').textContent = '➡️ חזור למסך הבית';
-  if (state.user) document.getElementById('currentUserName').textContent = state.user.name || '';
+  // Prefer the name/color the user registered WITH this event over the auth-level name
+  var eventUser = state.user && state.users[state.user.id];
+  var displayName = (eventUser && eventUser.name) || (state.user && state.user.name) || '';
+  var displayColor = (eventUser && eventUser.color) || 'var(--accent)';
+  document.getElementById('currentUserName').textContent = displayName;
+  var userDot = document.querySelector('#screen-calendar .user-pill .uc');
+  if (userDot) userDot.style.background = displayColor;
 
   // Update date range info
   var dateRangeInfo = document.getElementById('dateRangeInfo');
@@ -312,9 +350,9 @@ function updateAdminPanel() {
 
 function isDayInRange(dateKey) {
   if (!state.dateFrom && !state.dateTo) return true;
-  var date = new Date(dateKey);
-  if (state.dateFrom && date < new Date(state.dateFrom + 'T00:00:00')) return false;
-  if (state.dateTo && date > new Date(state.dateTo + 'T23:59:59')) return false;
+  // dateKey and state.dateFrom/To are all "YYYY-MM-DD" — string compare works lexicographically
+  if (state.dateFrom && dateKey < state.dateFrom) return false;
+  if (state.dateTo && dateKey > state.dateTo) return false;
   return true;
 }
 
@@ -332,7 +370,9 @@ function renderCal() {
 
   var first = new Date(state.year, state.month, 1);
   var days = new Date(state.year, state.month + 1, 0).getDate();
-  var start = (first.getDay() + 6) % 7; // Adjust for Sunday being 0, make it last
+  // DAY_NAMES starts with Sunday (א), and JS getDay() returns 0 for Sunday —
+  // so no adjustment is needed. Using any offset mis-aligns the Hebrew week.
+  var start = first.getDay();
 
   document.getElementById('monthLabel').textContent = first.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
 
@@ -364,11 +404,12 @@ function renderCal() {
       dotsDiv.className = 'dots';
       var avail = state.availability[key] || [];
       for (var j = 0; j < avail.length; j++) {
-        var u = state.users[avail[j].userId];
-        if (!u) continue;
+        var entry = avail[j];
+        var u = state.users[entry.userId];
         var dot = document.createElement('div');
         dot.className = 'dot';
-        dot.style.background = u.color;
+        dot.style.background = (u && u.color) || '#9ca3af';
+        if (u && u.name) dot.title = u.name;
         dotsDiv.appendChild(dot);
       }
       div.appendChild(dotsDiv);
@@ -405,14 +446,13 @@ function renderSel() {
     for (var i = 0; i < entries.length; i++) {
       (function(idx) {
         var entry = entries[idx];
-        var u = state.users[entry.userId];
-        if (!u) return;
+        var u = state.users[entry.userId] || { name: 'משתתף', color: '#9ca3af' };
         var isMine = (entry.userId === state.user.id);
         var item = document.createElement('div');
         item.className = 'av-item';
         if (isMine) item.classList.add('mine');
-        var html = '<div class="av-color" style="background:' + u.color + '"></div>';
-        html += '<div class="av-text"><strong>' + u.name + '</strong>' + (entry.note ? ' – ' + entry.note : '') + '</div>';
+        var html = '<div class="av-color" style="background:' + escapeHtml(u.color) + '"></div>';
+        html += '<div class="av-text"><strong>' + escapeHtml(u.name) + '</strong>' + (entry.note ? ' – ' + escapeHtml(entry.note) : '') + '</div>';
         if (isMine) {
           html += '<div class="av-actions"><button type="button" class="edit-entry" title="ערוך">✏️</button><button type="button" class="del-entry" title="מחק">🗑️</button></div>';
         }
@@ -525,7 +565,8 @@ function logout() {
   state.dateFrom = null;
   state.dateTo = null;
   state.editingEntry = null;
-  state.user = savedUser;
+  // Restore baseline user (without event-specific color/name)
+  state.user = { id: savedUser.id, name: savedUser.name, email: savedUser.email, photoURL: savedUser.photoURL, accessToken: savedUser.accessToken };
   state.isGuest = savedIsGuest;
   // Clear form fields
   document.getElementById('newEventName').value = '';
@@ -697,19 +738,29 @@ function getRandomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
-// Initial setup for guest mode
-function initializeGuestMode() {
+// Initial setup for guest mode — persist ID so reloads keep admin rights
+function initializeGuestMode(showNotice) {
   state.isGuest = true;
-  state.user = { id: 'guest_' + Math.random().toString(36).substring(2, 9), name: 'אורח', color: getRandomColor() };
+  var storedId = localStorage.getItem('guestId');
+  if (!storedId) {
+    storedId = 'guest_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+    localStorage.setItem('guestId', storedId);
+  }
+  state.user = { id: storedId, name: 'אורח', color: getRandomColor() };
   showScreen('screen-home');
-  showToast('נכנסת למצב אורח. חלק מהתכונות מוגבלות.', 'info', 5000);
-  document.getElementById('guestModeNotice').style.display = 'block';
+  if (showNotice) showToast('נכנסת למצב אורח.', 'info', 4000);
+  // Guest notice only shown explicitly on first "continue as guest" click
+  var notice = document.getElementById('guestModeNotice');
+  if (notice) notice.style.display = showNotice ? 'block' : 'none';
+  var dashBtn = document.getElementById('goDashboard');
+  if (dashBtn) dashBtn.style.display = 'none';
 }
 
 // Event listeners for core app functionality
 document.addEventListener('DOMContentLoaded', function() {
-  // Initial screen setup - will be overridden by auth.js
-  showScreen('screen-login');
+  // Default: start as guest on the home screen. If Firebase restores an auth
+  // session, auth.js's onAuthStateChanged will upgrade the user transparently.
+  initializeGuestMode(false);
 
   document.getElementById('goNew').addEventListener('click', function() { showScreen('screen-new'); });
   document.getElementById('goJoin').addEventListener('click', function() { showScreen('screen-join'); });
@@ -756,9 +807,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Calendar sync toggle
   document.getElementById('syncCalendarToggle').addEventListener('change', function(e) {
-    state.syncCalendar = e.target.checked;
+    var wantOn = e.target.checked;
+    if (wantOn && state.isGuest) {
+      e.target.checked = false;
+      state.syncCalendar = false;
+      localStorage.setItem('syncCalendar', 'false');
+      showToast('התחבר עם Google כדי לסנכרן ליומן.', 'warning');
+      return;
+    }
+    state.syncCalendar = wantOn;
     localStorage.setItem('syncCalendar', state.syncCalendar);
-    showToast('סנכרון יומן Google ' + (state.syncCalendar ? 'הופעל' : 'כובה'), 'info');
+    if (wantOn && window.requestCalendarScope && (!state.user || !state.user.accessToken)) {
+      window.requestCalendarScope().then(function() {
+        showToast('סנכרון Google Calendar הופעל', 'success');
+      }).catch(function() {
+        e.target.checked = false;
+        state.syncCalendar = false;
+        localStorage.setItem('syncCalendar', 'false');
+        showToast('ההרשאה לא ניתנה — סנכרון כובה.', 'warning');
+      });
+      return;
+    }
+    showToast('סנכרון יומן Google ' + (wantOn ? 'הופעל' : 'כובה'), 'info');
   });
   // Set initial state of toggle
   document.getElementById('syncCalendarToggle').checked = state.syncCalendar;
@@ -792,3 +862,5 @@ window.updateEventHeader = updateEventHeader;
 window.updateAdminPanel = updateAdminPanel;
 window.isDayInRange = isDayInRange;
 window.getRandomColor = getRandomColor;
+window.fmtKey = fmtKey;
+window.fmtLabel = fmtLabel;

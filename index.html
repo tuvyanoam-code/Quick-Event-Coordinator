@@ -21,19 +21,24 @@
 <div id="toast-container"></div>
 <div class="loader-overlay" id="loader-overlay"><div class="loader"></div></div>
 
-<div class="theme-toggle" id="theme-toggle"></div>
+<!-- Top header with theme toggle + sign-in/out -->
+<div class="app-header">
+  <button class="header-btn" id="headerSignInBtn" onclick="signInWithGoogle(false)" title="התחבר עם Google">🔑 התחבר</button>
+  <button class="header-btn" id="headerSignOutBtn" onclick="signOutUser()" style="display:none;" title="התנתק"></button>
+  <div class="theme-toggle" id="theme-toggle"></div>
+</div>
 
-<!-- Login Screen -->
-<div id="screen-login" class="screen active">
+<!-- Legacy login screen — no longer the default, accessible for flows that need it -->
+<div id="screen-login" class="screen">
   <div class="login-card card">
     <h1 class="logo">Quick Event Coordinator</h1>
     <h2>ברוך הבא!</h2>
     <p>תיאום זמינות קבוצתי קל ומהיר.</p>
-    <button class="google-signin-btn" onclick="signInWithGoogle()">
+    <button class="google-signin-btn" onclick="signInWithGoogle(false)">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon"/>
       התחבר עם Google
     </button>
-    <button class="guest-mode-btn" onclick="initializeGuestMode()">
+    <button class="guest-mode-btn" onclick="initializeGuestMode(true)">
       המשך כאורח
     </button>
   </div>
@@ -41,7 +46,7 @@
 
 <!-- Guest Mode Notice -->
 <div class="guest-notice" id="guestModeNotice" style="display:none;">
-  אתה במצב אורח. <a href="#" onclick="showScreen('screen-login')">התחבר</a> כדי לגשת ללוח המחוונים האישי ולסנכרון יומן Google.
+  אתה במצב אורח. <a href="#" onclick="signInWithGoogle(false);return false;">התחבר עם Google</a> כדי לגשת ללוח המחוונים האישי ולסנכרון יומן Google.
 </div>
 
 <!-- Home Screen -->

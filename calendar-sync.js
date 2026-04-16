@@ -2,25 +2,24 @@
 
 async function syncAvailabilityToCalendar(dateKey, note) {
   if (!window.state.user || window.state.isGuest) {
-    window.showToast('יש להתחבר כדי לסנכרן עם Google Calendar.', 'warning');
+    window.showToast('יש להתחבר עם Google כדי לסנכרן ליומן.', 'warning');
     return;
   }
 
   var token = window.state.user.accessToken;
 
-  // If no token, try to refresh
-  if (!token && window.refreshGoogleToken) {
+  // If no token, ask for Calendar scope now (only when user actually syncs)
+  if (!token && window.requestCalendarScope) {
     try {
-      window.showToast('מתחבר מחדש ל-Google Calendar...', 'info');
-      token = await window.refreshGoogleToken();
+      token = await window.requestCalendarScope();
     } catch (e) {
-      window.showToast('לא ניתן להתחבר ל-Google Calendar. נסה להתנתק ולהתחבר מחדש.', 'error');
+      window.showToast('צריך להרשות גישה ל-Google Calendar כדי לסנכרן.', 'warning');
       return;
     }
   }
 
   if (!token) {
-    window.showToast('אין הרשאת גישה ל-Google Calendar. נסה להתנתק ולהתחבר מחדש.', 'error');
+    window.showToast('לא קיבלנו הרשאת גישה ל-Google Calendar.', 'error');
     return;
   }
 
@@ -51,9 +50,9 @@ async function syncAvailabilityToCalendar(dateKey, note) {
 
     if (response.ok) {
       window.showToast('הזמינות סונכרנה ל-Google Calendar!', 'success');
-    } else if (response.status === 401 && window.refreshGoogleToken) {
+    } else if (response.status === 401 && window.requestCalendarScope) {
       // Token expired, try refresh
-      token = await window.refreshGoogleToken();
+      token = await window.requestCalendarScope();
       var retry = await fetch(
         'https://www.googleapis.com/calendar/v3/calendars/primary/events',
         {

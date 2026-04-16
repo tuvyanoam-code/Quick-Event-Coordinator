@@ -47,18 +47,29 @@ function loadUserDashboard(uid) {
             dateRangeText = `עד-${new Date(event.data.dateTo).toLocaleDateString("he-IL")}`;
           }
 
-          eventItem.innerHTML = `
-            <h3>${event.data.name}</h3>
-            <p>תפקיד: ${event.role === "admin" ? "מארגן" : "משתתף"}</p>
-            <div class="meta">
-              <span>${participantCount} משתתפים</span>
-              <span>${dateRangeText}</span>
-            </div>
-            <div class="actions">
-              <button class="btn view-btn" onclick="viewEvent('${event.key}', '${event.data.name}', '${event.data.code}', ${event.role === 'admin'}) ">צפה באירוע</button>
-              <button class="btn leave-btn" onclick="leaveEvent('${event.key}', '${event.data.name}')">עזוב אירוע</button>
-            </div>
-          `;
+          var esc = window.escapeHtml || function(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+          eventItem.innerHTML =
+            '<h3></h3>' +
+            '<p>תפקיד: ' + (event.role === "admin" ? "מארגן" : "משתתף") + '</p>' +
+            '<div class="meta">' +
+              '<span>' + participantCount + ' משתתפים</span>' +
+              '<span>' + esc(dateRangeText) + '</span>' +
+            '</div>' +
+            '<div class="actions">' +
+              '<button class="btn view-btn" type="button">צפה באירוע</button>' +
+              '<button class="btn leave-btn" type="button">עזוב אירוע</button>' +
+            '</div>';
+          // Safely set name as textContent so HTML in the name can't inject
+          eventItem.querySelector('h3').textContent = event.data.name || '';
+
+          var viewBtn = eventItem.querySelector('.view-btn');
+          var leaveBtn = eventItem.querySelector('.leave-btn');
+          viewBtn.addEventListener('click', function() {
+            viewEvent(event.key, event.data.name, event.data.code, event.role === 'admin');
+          });
+          leaveBtn.addEventListener('click', function() {
+            leaveEvent(event.key, event.data.name, leaveBtn);
+          });
           eventListDiv.appendChild(eventItem);
         });
         hideLoader();
@@ -85,13 +96,8 @@ function viewEvent(eventKey, eventName, eventCode, isAdmin) {
 }
 
 var _leaveConfirmTimer = null;
-function leaveEvent(eventKey, eventName) {
+function leaveEvent(eventKey, eventName, targetBtn) {
   // Use double-click confirmation instead of native confirm()
-  var btns = document.querySelectorAll('.leave-btn');
-  var targetBtn = null;
-  btns.forEach(function(b) {
-    if (b.getAttribute('onclick') && b.getAttribute('onclick').indexOf(eventKey) !== -1) targetBtn = b;
-  });
   if (targetBtn && !targetBtn._confirming) {
     targetBtn._confirming = true;
     targetBtn.textContent = '⚠️ לחץ שוב לאישור';

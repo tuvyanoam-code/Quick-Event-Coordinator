@@ -311,8 +311,8 @@
         typing.classList.remove('typing');
 
         // Try to extract JSON from the reply (handle ```json blocks too)
-        var jsonStr=reply;
-        var jsonMatch=reply.match(/```(?:json)?\\s*([\\s\\S]*?)```/);
+        var jsonStr=reply.trim();
+        var jsonMatch=reply.match(/```(?:json)?\s*([\s\S]*?)```/);
         if(jsonMatch) jsonStr=jsonMatch[1].trim();
 
         try {
