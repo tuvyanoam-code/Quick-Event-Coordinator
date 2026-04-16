@@ -287,40 +287,65 @@ textarea:focus{border-color:var(--accent2);background:var(--hover-bg)}
   border-color:var(--danger);color:var(--danger);
 }
 
-/* Login screen */
-#screen-login{
+/* Login gate — full-page centered card, blocks app until user chooses */
+#screen-login.active{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:calc(100vh - 120px); /* Adjust for header/footer padding */
-  text-align:center;
+  min-height:calc(100vh - 80px);
+  text-align:center;max-width:460px;
 }
 #screen-login .login-card{
-  background:var(--card);border-radius:var(--radius);padding:40px 30px;
-  box-shadow:var(--shadow);border:1px solid var(--border);max-width:400px;
-  width:100%;
+  background:var(--card);border-radius:var(--radius);padding:44px 32px 36px;
+  box-shadow:var(--shadow);border:1px solid var(--border);width:100%;
+  animation:popIn .25s ease;
+}
+#screen-login .logo{
+  font-size:26px;margin-bottom:18px;
 }
 #screen-login h2{
-  font-size:24px;font-weight:700;margin-bottom:15px;color:var(--accent);
+  font-size:22px;font-weight:700;margin-bottom:10px;color:var(--text);
 }
-#screen-login p{
-  font-size:15px;color:var(--muted);margin-bottom:30px;line-height:1.6;
+#screen-login > .login-card > p{
+  font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.6;
 }
 #screen-login .google-signin-btn{
-  display:inline-flex;align-items:center;gap:10px;background:#4285F4;color:#fff;
-  border:none;border-radius:8px;padding:12px 20px;font-size:16px;font-weight:500;
-  cursor:pointer;transition:background .15s;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:10px;
+  padding:12px 22px;font-size:15px;font-weight:500;font-family:'Assistant',sans-serif;
+  cursor:pointer;transition:box-shadow .15s,border-color .15s,transform .08s;
+  width:100%;max-width:300px;
 }
 #screen-login .google-signin-btn:hover{
-  background:#357ae8;
+  box-shadow:0 2px 8px rgba(60,64,67,0.15);border-color:#c6c8cc;transform:translateY(-1px);
 }
 #screen-login .google-signin-btn img{
   width:20px;height:20px;
 }
+#screen-login .login-divider{
+  display:flex;align-items:center;gap:12px;margin:22px 0;color:var(--muted);
+  font-size:12px;
+}
+#screen-login .login-divider::before,
+#screen-login .login-divider::after{
+  content:"";flex:1;height:1px;background:var(--border);
+}
 #screen-login .guest-mode-btn{
-  background:none;border:none;color:var(--accent);font-size:14px;margin-top:20px;
-  cursor:pointer;text-decoration:underline;
+  background:none;border:1px solid var(--border);color:var(--text);
+  font-size:14px;font-family:'Assistant',sans-serif;
+  padding:10px 20px;border-radius:10px;cursor:pointer;width:100%;max-width:300px;
+  transition:border-color .15s,color .15s;
 }
 #screen-login .guest-mode-btn:hover{
-  opacity:0.8;
+  border-color:var(--accent2);color:var(--accent);
+}
+#screen-login .login-fine-print{
+  font-size:11px;color:var(--muted);margin-top:22px;line-height:1.6;
+  padding:0 4px;
+}
+[data-theme="dark"] #screen-login .google-signin-btn{
+  background:#1f2944;color:#e8eaed;border-color:#3c4355;
+}
+[data-theme="dark"] #screen-login .google-signin-btn:hover{
+  background:#2a3553;border-color:#525b6f;
 }
 
 /* Calendar Sync Toggle */

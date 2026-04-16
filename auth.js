@@ -36,8 +36,9 @@ function signOutUser() {
   showLoader();
   auth.signOut().then(function() {
     _googleAccessToken = null;
-    // Re-enter guest mode cleanly
-    if (window.initializeGuestMode) window.initializeGuestMode(false);
+    // Re-prime guest identity without navigating, then send the user back to
+    // the login gate so they can explicitly choose how to continue.
+    if (window.setupGuestUser) window.setupGuestUser();
     var dashBtn = document.getElementById('goDashboard');
     if (dashBtn) dashBtn.style.display = 'none';
     var signInBtn = document.getElementById('headerSignInBtn');
@@ -45,7 +46,7 @@ function signOutUser() {
     if (signInBtn) signInBtn.style.display = '';
     if (signOutBtn) signOutBtn.style.display = 'none';
     if (window.showToast) window.showToast('התנתקת בהצלחה', 'info');
-    if (window.showScreen) window.showScreen('screen-home');
+    if (window.showScreen) window.showScreen('screen-login');
   }).catch(function(error) {
     if (window.showToast) window.showToast('שגיאת התנתקות: ' + error.message, 'error');
   }).finally(function() {

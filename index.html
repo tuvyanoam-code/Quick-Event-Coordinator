@@ -28,19 +28,21 @@
   <div class="theme-toggle" id="theme-toggle"></div>
 </div>
 
-<!-- Legacy login screen — no longer the default, accessible for flows that need it -->
-<div id="screen-login" class="screen">
+<!-- Login gate — default active; app is blocked until user chooses an identity -->
+<div id="screen-login" class="screen active">
   <div class="login-card card">
-    <h1 class="logo">Quick Event Coordinator</h1>
+    <h1 class="logo">📅 Quick Event Coordinator</h1>
     <h2>ברוך הבא!</h2>
-    <p>תיאום זמינות קבוצתי קל ומהיר.</p>
+    <p>תיאום זמינות קבוצתי קל ומהיר.<br/>בחר איך להמשיך כדי להתחיל.</p>
     <button class="google-signin-btn" onclick="signInWithGoogle(false)">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon"/>
       התחבר עם Google
     </button>
-    <button class="guest-mode-btn" onclick="initializeGuestMode(true)">
+    <div class="login-divider"><span>או</span></div>
+    <button class="guest-mode-btn" onclick="continueAsGuest()">
       המשך כאורח
     </button>
+    <p class="login-fine-print">התחברות עם Google מאפשרת גישה ללוח המחוונים האישי שלך ולסנכרון יומן Google. כאורח אפשר ליצור/להצטרף לאירועים אבל לא לסנכרן ליומן.</p>
   </div>
 </div>
 

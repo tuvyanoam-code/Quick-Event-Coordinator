@@ -88,6 +88,14 @@ function showScreen(screenId) {
   document.getElementById(screenId).classList.add('active');
   // Hide AI window when changing screens
   document.getElementById('ai-window').classList.remove('open');
+  // The login gate has its own sign-in button; hide the floating top header
+  // there, and also hide the floating AI assistant so it doesn't distract.
+  var appHeader = document.querySelector('.app-header');
+  var aiFab = document.getElementById('ai-fab');
+  var onGate = (screenId === 'screen-login');
+  if (appHeader) appHeader.style.display = onGate ? 'none' : 'flex';
+  if (aiFab) aiFab.style.display = onGate ? 'none' : 'flex';
+  window.scrollTo(0, 0);
 }
 
 // Theme toggle
@@ -743,8 +751,8 @@ function getRandomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
-// Initial setup for guest mode — persist ID so reloads keep admin rights
-function initializeGuestMode(showNotice) {
+// Ensure a stable guest identity exists in state + localStorage (no navigation)
+function setupGuestUser() {
   state.isGuest = true;
   var storedId = localStorage.getItem('guestId');
   if (!storedId) {
@@ -752,20 +760,38 @@ function initializeGuestMode(showNotice) {
     localStorage.setItem('guestId', storedId);
   }
   state.user = { id: storedId, name: 'אורח', color: getRandomColor() };
+}
+
+// Explicit user action: "Continue as guest" from the login gate
+function continueAsGuest() {
+  setupGuestUser();
   showScreen('screen-home');
-  if (showNotice) showToast('נכנסת למצב אורח.', 'info', 4000);
-  // Guest notice only shown explicitly on first "continue as guest" click
-  var notice = document.getElementById('guestModeNotice');
-  if (notice) notice.style.display = showNotice ? 'block' : 'none';
   var dashBtn = document.getElementById('goDashboard');
   if (dashBtn) dashBtn.style.display = 'none';
+  var notice = document.getElementById('guestModeNotice');
+  if (notice) notice.style.display = 'block';
+  showToast('המשכת כאורח.', 'info', 3000);
+}
+
+// Kept for backward compatibility with any lingering callers
+function initializeGuestMode(showNotice) {
+  if (showNotice) continueAsGuest();
+  else setupGuestUser();
 }
 
 // Event listeners for core app functionality
 document.addEventListener('DOMContentLoaded', function() {
-  // Default: start as guest on the home screen. If Firebase restores an auth
-  // session, auth.js's onAuthStateChanged will upgrade the user transparently.
-  initializeGuestMode(false);
+  // Set up a fallback guest identity so state.user is always defined for
+  // downstream code, but DO NOT navigate. The HTML default active screen is
+  // the login gate; the user must explicitly sign in or pick "continue as
+  // guest" before they can reach the home / create / join flows.
+  setupGuestUser();
+  // On the login gate, hide the top floating controls so the gate is the
+  // only interactive element on screen.
+  var appHeader = document.querySelector('.app-header');
+  var aiFab = document.getElementById('ai-fab');
+  if (appHeader) appHeader.style.display = 'none';
+  if (aiFab) aiFab.style.display = 'none';
 
   document.getElementById('goNew').addEventListener('click', function() { showScreen('screen-new'); });
   document.getElementById('goJoin').addEventListener('click', function() { showScreen('screen-join'); });
@@ -854,6 +880,8 @@ window.handleSendEmail = handleSendEmail;
 window.handleMailto = handleMailto;
 window.cancelEdit = cancelEdit;
 window.initializeGuestMode = initializeGuestMode;
+window.continueAsGuest = continueAsGuest;
+window.setupGuestUser = setupGuestUser;
 window.state = state; // Expose state for other modules to access
 window.dbSet = dbSet;
 window.dbUpdate = dbUpdate;
