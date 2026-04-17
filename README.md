@@ -23,8 +23,8 @@
 | 1 | יסודות — tokens, פונט, אייקונים | ✅ הושלם | [`93a385d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/93a385d) |
 | 2 | Login gate + Home screen | ✅ הושלם | [`e7c734d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/e7c734d) |
 | 3 | Create + Join flows + code/share | ✅ הושלם | [`043ad44`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/043ad44) |
-| 4 | Calendar + Admin + Availability | ⏳ הבא (דורש אישור לפני המשך) | — |
-| 5 | Floating UI + QA (dark + mobile) | ⏳ ממתין | — |
+| 4 | Calendar + Admin + Availability | ✅ הושלם | _see below_ |
+| 5 | Floating UI + QA (dark + mobile) | ⏳ הבא | — |
 
 ---
 
@@ -143,6 +143,74 @@
 - Calendar screen (grid, days, side-panel, admin) — שלב 4.
 - Toast visual overhaul מעמיק — כבר קיים מ-Stage 1 polish, אבל יש מקום לעבודה נוספת ב-Stage 5.
 - AI chatbot (fab + window) — שלב 5.
+
+---
+
+## Stage 4 — Calendar + Admin + Availability ✅
+
+**מה נעשה:**
+- **Event head (כותרת האירוע) שוכתב** — `.cal-event-head` עם title למעלה בגודל 22px/800, מתחתיו `.cal-event-meta` שמכיל:
+  - **Code badge מפוצל**: label "קוד" קטן באותיות גדולות עם spacing רחב, ואז הקוד עצמו בפונט monospace. יותר ברור איזה חלק הוא label ואיזה הוא הערך.
+  - **Admin badge** נפרד ב-tone של "זהב" (על רקע `--admin-bg`) כדי להבדיל מ-code.
+- **User pill עם avatar dot** — הנקודה גדלה ל-22px וקיבלה inset shadow שמדמה "ring" דק, נראה יותר כמו avatar קטן ולא רק dot טכני.
+- **Date range info refined** — היה פס טקסט קטן ירוק, עכשיו רכיב 10px radius עם גבול subtle ב-accent-soft ו-padding נדיב. יותר נראה כמו "info pill".
+- **Month navigation** — label בחודש ובשנה ב-17px/700 במרכז, כפתורי chevron ב-30px עגולים עדינים משני הצדדים.
+- **Day cells** — refined:
+  - רקע `--surface`, בורדר 1.5px שמתעבה ב-hover.
+  - Today: border accent + background accent-softer + `.dnum` ב-accent 800.
+  - Selected: border accent + background accent-soft + **ring** של `box-shadow 3px rgba(accent, .12)`. ברור מאוד שהיום נבחר.
+  - Disabled: opacity .55 ורקע אפור בהיר.
+  - Dots: 7px, עגולים, עם shadow-ring כדי להיפרד ברקע הצבעוני.
+- **Side panel שני pcards**:
+  - **pcard headers** — h3 באותיות גדולות uppercase 13px עם tracking — יותר נראה כמו section label של Notion מאשר כותרת רגילה.
+  - **`.sel-label`** — 15px/700 בצבע `--ink`. הוא הדבר הכי חשוב ב-pcard אחרי שנבחר יום.
+  - **Hint** — 12px muted.
+  - **Textarea** — בורדר 1.5px, focus state ירוק עם ring.
+  - **Add-btn** — primary מלא, 14px עם shadow subtle.
+  - **Cancel-btn** — ghost קטן מופיע רק בעריכה.
+- **Availability list refined**:
+  - `.av-item` עם padding 8x10, border-radius 10px, hover מציג רקע `--pill-bg`.
+  - `.av-item.mine` מקבל רקע accent-softer + border דק accent-soft — ברור "זה שלי".
+  - `.av-color` dot גדול ל-10px עם ring, shadow שמתאים לרקע של הפריט (mine vs לא).
+  - `.av-actions` buttons גדלו ל-30x30 עם hover state ברור — edit רגיל, delete ב-danger.
+  - Empty state: "עדיין אין זמינות לתאריך זה" באיטליק אפור.
+- **Sync switch iOS-style** — החלפה של checkbox אפור ב-custom toggle:
+  - `.sync-switch-track` 36x20 עם thumb 16x16 שזז משמאל לימין ב-transition 200ms.
+  - רקע אפור כשכבוי → רקע accent ירוק כשפועל.
+  - ה-input checkbox מוסתר (opacity:0 ברוחב מלא של הטרק) כך שהלחיצה עובדת טבעי.
+  - עטוף ב-box עם bordered card משלו.
+- **Admin panel refactored**:
+  - כותרת "ניהול האירוע" (במקום "פאנל מנהל") + hint "הגדרות שרק המארגן/ת יכול/ה לשנות".
+  - מחולק ל-`.admin-section`s עם `border-top` ביניהם — הפרדה ויזואלית ברורה בין "טווח תאריכים" לבין "אזור מסוכן" של מחיקה.
+  - Date range section: label + date-row עם 2 inputs + כפתור "עדכון" באותה שורה (לא שורה נפרדת).
+  - Danger section: כפתור מחיקה עם `.confirming` class שמפעיל `pulse-danger` animation של box-shadow — סימון ויזואלי ברור במצב המתנה לאישור כפול.
+- **Copy refresh**:
+  - "לא נבחר יום" → **"בחרו יום מהלוח"**
+  - "אין זמינות ליום זה" → **"עדיין אין זמינות לתאריך זה"**
+  - "הוסף זמינות" → **"הוספת זמינות"**; "עדכן זמינות" → **"עדכון זמינות"**
+  - "שומר..." → **"שומר…"** (ellipsis אמיתי)
+  - "פאנל מנהל" → **"ניהול האירוע"**
+  - "מחק את האירוע" → **"מחיקת האירוע"**; "לחץ שוב לאישור" → **"לחצו שוב לאישור מחיקה"**
+  - "סנכרן עם Google Calendar" → **"סנכרון אוטומטי ל-Google Calendar"**
+
+**קבצים ששונו:**
+- `index.html` — שכתוב מלא של `#screen-calendar`: `.cal-event-head` + `.cal-event-title` + `.cal-event-meta` + `.event-badge-code` עם `.badge-label`. הוחלפה `.calendar-sync-toggle` ב-`.sync-switch` עם structure של track + thumb. `#adminPanel` עבר לחלוקה ל-`.admin-panel-head` + `.admin-section`s עם labels ו-date-row שמכיל כפתור עדכון.
+- `styles.css` — בלוק Stage 4 בסוף הקובץ: calendar event head, code-badge split, user-pill, date-range-info, month-nav, day cells (today/sel/disabled refined), pcard + sel-label, av-list + av-item (mine variant), sync-switch iOS-style, admin-panel sectioned.
+- `app.js` — `renderSel` ו-`cancelEdit` ו-`addAvailability` עודכנו עם הקופי החדש. `deleteEvent` משתמש ב-`.confirming` class (+ pulse animation) במקום inline style. `createBtn` text בעת reset משתמש ב-"יצירת אירוע". Toast "טווח תאריכים עודכן" נוקה מ-"!".
+
+**החלטות עיצוב לתיעוד:**
+- **Code badge עם label נפרד** — brickato-inspired: לא "קוד: 1234" ברצף, אלא שני "תוויות" בתוך pill אחד, עם typography שונה (text vs mono). מתקשר מיידית מה label ומה value.
+- **Selected day ring** — שני מקורות ויזואליים (border + box-shadow) במקום שינוי דרסטי של רקע. יותר refined, פחות aggressive.
+- **Sync switch עם `<input>` מוסתר ב-opacity:0 על כל הטרק** — cross-browser compatible, keyboard accessible (Space מחליף), label עם `for` גורם לכל המבנה להיות clickable. לא משתמשים ב-`:has()` בלבד כי תמיכה לא אחידה בדפדפנים ישנים.
+- **Pulse animation על מצב אישור מחיקה** — הסאבטקסט הוויזואלי של "זה זמני, אתה עומד לעשות משהו קריטי". זה אנימציה רכה, לא מרעישה, אבל מסוכנת.
+
+**מה **לא** נעשה בשלב 4 (נשאר לשלב 5):**
+- AI chatbot (fab + window) — שלב 5.
+- Toast visual polish נוסף — שלב 5.
+- Account dropdown (user-menu) — שלב 5.
+- Theme toggle ו-loader — שלב 5.
+- בדיקת dark theme פר מסך — שלב 5.
+- Mobile responsive sweep — שלב 5.
 
 ---
 

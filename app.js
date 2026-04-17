@@ -573,7 +573,7 @@ function renderCal() {
 function renderSel() {
   var addBtn = document.getElementById('addBtn');
   if (!state.selected) {
-    document.getElementById('selLabel').textContent = 'לא נבחר יום';
+    document.getElementById('selLabel').textContent = 'בחרו יום מהלוח';
     document.getElementById('avList').innerHTML = '';
     addBtn.disabled = true;
     return;
@@ -584,7 +584,7 @@ function renderSel() {
   var list = document.getElementById('avList');
   list.innerHTML = '';
   if (!entries.length) {
-    list.innerHTML = '<span style="color:var(--muted)">אין זמינות ליום זה</span>';
+    list.innerHTML = '<span>עדיין אין זמינות לתאריך זה</span>';
   } else {
     for (var i = 0; i < entries.length; i++) {
       (function(idx) {
@@ -604,7 +604,7 @@ function renderSel() {
           item.querySelector('.edit-entry').addEventListener('click', function() {
             state.editingEntry = idx;
             document.getElementById('noteInput').value = entry.note || '';
-            document.getElementById('addBtn').textContent = 'עדכן זמינות';
+            document.getElementById('addBtn').textContent = 'עדכון זמינות';
             document.getElementById('addPanelTitle').textContent = 'עריכת זמינות';
             document.getElementById('cancelEditBtn').style.display = 'block';
             document.getElementById('noteInput').focus();
@@ -627,7 +627,7 @@ function renderSel() {
 function cancelEdit() {
   state.editingEntry = null;
   document.getElementById('noteInput').value = '';
-  document.getElementById('addBtn').textContent = 'הוסף זמינות';
+  document.getElementById('addBtn').textContent = 'הוספת זמינות';
   document.getElementById('addPanelTitle').textContent = 'הוספת זמינות';
   document.getElementById('cancelEditBtn').style.display = 'none';
 }
@@ -638,7 +638,7 @@ function addAvailability() {
   var note = document.getElementById('noteInput').value.trim();
   var addBtn = document.getElementById('addBtn');
   addBtn.disabled = true;
-  addBtn.textContent = 'שומר...';
+  addBtn.textContent = 'שומר…';
 
   dbGet('events/' + state.eventKey + '/availability/' + key).then(function(snap) {
     var entries = snap.exists() ? snap.val() : [];
@@ -661,17 +661,17 @@ function addAvailability() {
     showToast('שגיאה בשמירת הזמינות: ' + e.message, 'error');
   }).finally(function() {
     addBtn.disabled = false;
-    addBtn.textContent = 'הוסף זמינות';
+    addBtn.textContent = 'הוספת זמינות';
   });
 }
 
 function deleteEvent() {
-  // Inline confirmation — restore the original button markup on timeout.
-  showToast('לוחץ שוב על "מחק" תוך 5 שניות לאישור', 'warning', 5000);
+  // Inline two-click confirmation — uses .confirming class + restores HTML on timeout.
+  showToast('לחצו שוב תוך 5 שניות לאישור', 'warning', 5000);
   var delBtn = document.getElementById('deleteEventBtn');
   var originalHTML = delBtn.innerHTML;
-  delBtn.textContent = 'לחץ שוב לאישור';
-  delBtn.style.background = '#991b1b';
+  delBtn.textContent = 'לחצו שוב לאישור מחיקה';
+  delBtn.classList.add('confirming');
   var confirmed = false;
   var handler = function() {
     confirmed = true;
@@ -688,7 +688,7 @@ function deleteEvent() {
     if (!confirmed) {
       delBtn.removeEventListener('click', handler);
       delBtn.innerHTML = originalHTML;
-      delBtn.style.background = '';
+      delBtn.classList.remove('confirming');
     }
   }, 5000);
 }
@@ -727,7 +727,7 @@ function logout() {
   var cb = document.getElementById('createBtn');
   cb.style.display = '';
   cb.disabled = false;
-  cb.textContent = 'צור אירוע';
+  cb.textContent = 'יצירת אירוע';
   document.getElementById('sendEmailBtn').innerHTML = ICONS.mail + '<span>שלח פרטים למייל שלי</span>';
   document.getElementById('sendEmailBtn').disabled = false;
   document.getElementById('openMailtoBtn').style.display = 'none';
@@ -809,7 +809,7 @@ document.getElementById('adminSetDatesBtn').addEventListener('click', function()
   else updates['/dateTo'] = null;
 
   dbUpdate('events/' + state.eventKey, updates).then(function() {
-    showToast('טווח התאריכים עודכן בהצלחה!', 'success');
+    showToast('טווח התאריכים עודכן', 'success');
   }).catch(function(e) {
     showToast('שגיאה בעדכון טווח תאריכים: ' + e.message, 'error');
   });

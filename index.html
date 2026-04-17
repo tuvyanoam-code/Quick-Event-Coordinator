@@ -223,20 +223,27 @@
 <!-- Calendar Screen -->
 <div id="screen-calendar" class="screen">
   <button class="back-btn" id="logoutBtn"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg><span>חזרה למסך הבית</span></button>
-  <div class="card">
-    <div class="cal-header-row">
-      <div>
+  <div class="card cal-card">
+    <!-- Event header: title + code + role badge + user pill -->
+    <div class="cal-event-head">
+      <div class="cal-event-title">
         <h2 id="calEventName">שם האירוע</h2>
-        <span class="event-badge" id="calEventCode">קוד</span>
-        <span class="event-badge" id="eventAdminBadge" style="display:none;">מארגן</span>
+        <div class="cal-event-meta">
+          <span class="event-badge event-badge-code" title="קוד האירוע">
+            <span class="badge-label">קוד</span>
+            <span id="calEventCode">0000</span>
+          </span>
+          <span class="event-badge event-badge-admin" id="eventAdminBadge" style="display:none;">מארגן</span>
+        </div>
       </div>
       <div class="user-pill">
-        <div class="uc" style="background:var(--accent)"></div>
+        <span class="uc" style="background:var(--accent)"></span>
         <span id="currentUserName"></span>
       </div>
     </div>
     <p class="date-range-info" id="dateRangeInfo" style="display:none;"></p>
 
+    <!-- Month navigation -->
     <div class="month-nav">
       <button class="nav-btn" id="prevMonth" aria-label="חודש קודם">
         <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
@@ -248,37 +255,49 @@
     </div>
     <div class="grid" id="calGrid"></div>
 
+    <!-- Side panel: add availability + availability list for selected day -->
     <div class="side-panel">
-      <div class="pcard">
+      <div class="pcard pcard-add">
         <h3 id="addPanelTitle">הוספת זמינות</h3>
-        <p class="sel-label" id="selLabel">לא נבחר יום</p>
-        <p class="hint">הוסף הערה קצרה לזמינות שלך (אופציונלי).</p>
+        <p class="sel-label" id="selLabel">בחרו יום מהלוח</p>
+        <p class="hint">הוסיפו הערה קצרה (לא חובה)</p>
         <textarea id="noteInput" placeholder="לדוגמה: פנוי/ה בבוקר, אחרי 17:00"></textarea>
-        <button class="add-btn" id="addBtn" disabled>הוסף זמינות</button>
-        <button class="btn btn-sm" id="cancelEditBtn" style="display:none;">ביטול עריכה</button>
-        <div class="calendar-sync-toggle">
-          <input type="checkbox" id="syncCalendarToggle"/>
-          <label for="syncCalendarToggle">סנכרן עם Google Calendar</label>
+        <button class="add-btn" id="addBtn" disabled>הוספת זמינות</button>
+        <button class="btn btn-sm btn-ghost" id="cancelEditBtn" style="display:none;">ביטול עריכה</button>
+        <div class="sync-switch">
+          <span class="sync-switch-track">
+            <input type="checkbox" id="syncCalendarToggle"/>
+            <span class="sync-switch-thumb" aria-hidden="true"></span>
+          </span>
+          <label for="syncCalendarToggle">סנכרון אוטומטי ל-Google Calendar</label>
         </div>
       </div>
-      <div class="pcard">
-        <h3>זמינות ליום זה</h3>
+      <div class="pcard pcard-list">
+        <h3>זמינות ליום הנבחר</h3>
         <div class="av-list" id="avList"></div>
       </div>
     </div>
 
+    <!-- Admin panel (organizer only) -->
     <div class="admin-panel" id="adminPanel" style="display:none;">
-      <h3>פאנל מנהל</h3>
-      <p class="hint">כאן תוכל לקבוע את טווח התאריכים של האירוע ולמחוק אותו.</p>
-      <div class="date-row">
-        <input type="date" id="adminDateFrom" placeholder="תאריך התחלה"/>
-        <input type="date" id="adminDateTo" placeholder="תאריך סיום"/>
+      <div class="admin-panel-head">
+        <h3>ניהול האירוע</h3>
+        <p class="hint">הגדרות שרק המארגן/ת יכול/ה לשנות.</p>
       </div>
-      <button class="btn btn-sm" id="adminSetDatesBtn">עדכן טווח תאריכים</button>
-      <button class="btn btn-danger btn-sm" id="deleteEventBtn" style="margin-top:10px;">
-        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        <span>מחק את האירוע</span>
-      </button>
+      <div class="admin-section">
+        <label class="admin-label">טווח תאריכים לאירוע</label>
+        <div class="date-row">
+          <input type="date" id="adminDateFrom" aria-label="תאריך התחלה"/>
+          <input type="date" id="adminDateTo" aria-label="תאריך סיום"/>
+          <button class="btn btn-sm btn-ghost" id="adminSetDatesBtn">עדכון</button>
+        </div>
+      </div>
+      <div class="admin-section admin-section-danger">
+        <button class="btn btn-danger btn-sm" id="deleteEventBtn">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>מחיקת האירוע</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
