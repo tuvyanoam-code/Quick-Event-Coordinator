@@ -131,7 +131,14 @@ auth.onAuthStateChanged(function(user) {
     var signOutBtn = document.getElementById('headerSignOutBtn');
     if (signInBtn) signInBtn.style.display = 'none';
     if (menuWrap) menuWrap.style.display = '';
-    if (signOutBtn) signOutBtn.textContent = '👤 ' + (user.displayName || 'חשבון') + ' ▾';
+    if (signOutBtn) {
+      var userIcon = (window.ICONS && window.ICONS.user) || '';
+      var caret = (window.ICONS && window.ICONS.caret) || '';
+      var name = user.displayName || 'חשבון';
+      // Show first name only to keep the chip compact
+      var firstName = name.split(' ')[0];
+      signOutBtn.innerHTML = userIcon + '<span>' + firstName + '</span>' + caret;
+    }
 
     // Persist profile (merge so we don't clobber /events subtree)
     window._db.ref('users/' + user.uid).update({

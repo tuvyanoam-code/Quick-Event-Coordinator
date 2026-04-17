@@ -144,9 +144,23 @@ var THEME_LOC_KEY = 'theme-location';
 var THEME_DEFAULT_LOC = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv fallback
 var themeManualOverride = false;
 
+// Minimal inline SVG icons used for UI chrome — keeps parity with HTML icons.
+var ICONS = {
+  sun:  '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>',
+  moon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+  user: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  caret:'<svg class="icon caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>',
+  pencil:'<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+  trash:'<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
+  chevronBack:'<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>',
+  mail:'<svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'
+};
+window.ICONS = ICONS;
+
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+  // Show the icon of the mode the user can SWITCH TO (not the current one)
+  themeToggle.innerHTML = theme === 'dark' ? ICONS.sun : ICONS.moon;
 }
 
 // NOAA sunrise/sunset algorithm. Returns UTC hours (decimal) for the given date.
@@ -431,7 +445,7 @@ function updateEventHeader() {
   document.getElementById('calEventCode').textContent = state.eventCode;
   document.getElementById('eventAdminBadge').style.display = state.isAdmin ? 'inline-block' : 'none';
   document.getElementById('adminPanel').style.display = state.isAdmin ? 'block' : 'none';
-  document.getElementById('logoutBtn').textContent = '➡️ חזור למסך הבית';
+  document.getElementById('logoutBtn').innerHTML = ICONS.chevronBack + '<span>חזרה למסך הבית</span>';
   // Prefer the name/color the user registered WITH this event over the auth-level name
   var eventUser = state.user && state.users[state.user.id];
   var displayName = (eventUser && eventUser.name) || (state.user && state.user.name) || '';
@@ -568,7 +582,7 @@ function renderSel() {
         var html = '<div class="av-color" style="background:' + escapeHtml(u.color) + '"></div>';
         html += '<div class="av-text"><strong>' + escapeHtml(u.name) + '</strong>' + (entry.note ? ' – ' + escapeHtml(entry.note) : '') + '</div>';
         if (isMine) {
-          html += '<div class="av-actions"><button type="button" class="edit-entry" title="ערוך">✏️</button><button type="button" class="del-entry" title="מחק">🗑️</button></div>';
+          html += '<div class="av-actions"><button type="button" class="edit-entry" title="ערוך" aria-label="ערוך">' + ICONS.pencil + '</button><button type="button" class="del-entry" title="מחק" aria-label="מחק">' + ICONS.trash + '</button></div>';
         }
         item.innerHTML = html;
         if (isMine) {
@@ -637,17 +651,18 @@ function addAvailability() {
 }
 
 function deleteEvent() {
-  // Use a simple inline confirmation instead of native confirm()
+  // Inline confirmation — restore the original button markup on timeout.
   showToast('לוחץ שוב על "מחק" תוך 5 שניות לאישור', 'warning', 5000);
   var delBtn = document.getElementById('deleteEventBtn');
-  delBtn.textContent = '⚠️ לחץ שוב לאישור';
+  var originalHTML = delBtn.innerHTML;
+  delBtn.textContent = 'לחץ שוב לאישור';
   delBtn.style.background = '#991b1b';
   var confirmed = false;
   var handler = function() {
     confirmed = true;
     delBtn.removeEventListener('click', handler);
     dbRemove('events/' + state.eventKey).then(function() {
-      showToast('האירוע נמחק בהצלחה.', 'success');
+      showToast('האירוע נמחק', 'success');
       logout();
     }).catch(function(e) {
       showToast('שגיאה במחיקת האירוע: ' + e.message, 'error');
@@ -657,7 +672,7 @@ function deleteEvent() {
   setTimeout(function() {
     if (!confirmed) {
       delBtn.removeEventListener('click', handler);
-      delBtn.textContent = '🗑️ מחק את האירוע';
+      delBtn.innerHTML = originalHTML;
       delBtn.style.background = '';
     }
   }, 5000);
@@ -698,7 +713,7 @@ function logout() {
   cb.style.display = '';
   cb.disabled = false;
   cb.textContent = 'צור אירוע';
-  document.getElementById('sendEmailBtn').textContent = '📧 שלח פרטים למייל שלי';
+  document.getElementById('sendEmailBtn').innerHTML = ICONS.mail + '<span>שלח פרטים למייל שלי</span>';
   document.getElementById('sendEmailBtn').disabled = false;
   document.getElementById('openMailtoBtn').style.display = 'none';
   document.getElementById('emailStatus').style.display = 'none';
@@ -855,7 +870,7 @@ function handleSendEmail() {
     })
     .finally(function() {
       sendBtn.disabled = false;
-      sendBtn.textContent = '📧 שלח פרטים למייל שלי';
+      sendBtn.innerHTML = ICONS.mail + '<span>שלח פרטים למייל שלי</span>';
     });
 }
 

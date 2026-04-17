@@ -4,7 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Quick Event Coordinator</title>
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Assistant:wght@400;500;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="styles.css"/>
 
 <!-- Firebase SDKs -->
@@ -23,21 +25,30 @@
 
 <!-- Top header with theme toggle + sign-in/account menu -->
 <div class="app-header">
-  <button class="header-btn" id="headerSignInBtn" onclick="signInWithGoogle(false)" title="התחבר עם Google">🔑 התחבר</button>
+  <button class="header-btn" id="headerSignInBtn" onclick="signInWithGoogle(false)" title="התחבר עם Google">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>התחברות</span>
+  </button>
   <div class="user-menu-wrap" id="userMenuWrap" style="display:none;">
     <button class="header-btn" id="headerSignOutBtn" onclick="toggleUserMenu(event)" title="חשבון" aria-haspopup="true" aria-expanded="false"></button>
     <div class="user-menu" id="userMenu" role="menu" hidden>
-      <button class="user-menu-item" role="menuitem" onclick="userMenuGrantCalendar()">📅 הענק הרשאות יומן Google</button>
-      <button class="user-menu-item" role="menuitem" onclick="userMenuSignOut()">🚪 ניתוק</button>
+      <button class="user-menu-item" role="menuitem" onclick="userMenuGrantCalendar()">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>הענקת הרשאות יומן</span>
+      </button>
+      <button class="user-menu-item" role="menuitem" onclick="userMenuSignOut()">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>ניתוק</span>
+      </button>
     </div>
   </div>
-  <div class="theme-toggle" id="theme-toggle"></div>
+  <div class="theme-toggle" id="theme-toggle" title="מצב בהיר/כהה" role="button" tabindex="0"></div>
 </div>
 
 <!-- Login gate — default active; app is blocked until user chooses an identity -->
 <div id="screen-login" class="screen active">
   <div class="login-card card">
-    <h1 class="logo">📅 Quick Event Coordinator</h1>
+    <h1 class="logo">Quick Event Coordinator</h1>
     <h2>ברוך הבא!</h2>
     <p>תיאום זמינות קבוצתי קל ומהיר.<br/>בחר איך להמשיך כדי להתחיל.</p>
     <button class="google-signin-btn" onclick="signInWithGoogle(false)">
@@ -64,24 +75,30 @@
 
   <div class="home-cards">
     <div class="home-card" id="goNew">
-      <div class="home-icon new">➕</div>
+      <div class="home-icon new">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
       <div class="home-card-text">
         <h2>צור אירוע חדש</h2>
-        <p>הגדר אירוע חדש ושתף עם חברים</p>
+        <p>הגדר אירוע ושתף את הקוד עם הצוות</p>
       </div>
     </div>
     <div class="home-card" id="goJoin">
-      <div class="home-icon join">🤝</div>
+      <div class="home-icon join">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
       <div class="home-card-text">
         <h2>הצטרף לאירוע קיים</h2>
-        <p>הזן קוד והצטרף לאירוע של חבר</p>
+        <p>הזן את הקוד שקיבלת והצטרף</p>
       </div>
     </div>
     <div class="home-card" id="goDashboard" style="display:none;">
-      <div class="home-icon">📊</div>
+      <div class="home-icon dashboard">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
       <div class="home-card-text">
-        <h2>לוח מחוונים אישי</h2>
-        <p>צפה בכל האירועים שלך</p>
+        <h2>לוח המחוונים שלי</h2>
+        <p>כל האירועים שלך במקום אחד</p>
       </div>
     </div>
   </div>
@@ -89,7 +106,7 @@
 
 <!-- Dashboard Screen -->
 <div id="screen-dashboard" class="screen">
-  <button class="back-btn" onclick="showScreen('screen-home')">➡️ חזור למסך הבית</button>
+  <button class="back-btn" onclick="showScreen('screen-home')"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg><span>חזרה למסך הבית</span></button>
   <div class="card">
     <h2>לוח המחוונים שלי</h2>
     <p class="desc">כל האירועים שיצרת או הצטרפת אליהם.</p>
@@ -99,7 +116,7 @@
 
 <!-- New Event Screen -->
 <div id="screen-new" class="screen">
-  <button class="back-btn" id="backFromNew">➡️ חזור</button>
+  <button class="back-btn" id="backFromNew"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg><span>חזרה</span></button>
   <div class="card">
     <h2>צור אירוע חדש</h2>
     <p class="desc">מלא את הפרטים ליצירת אירוע חדש.</p>
@@ -126,7 +143,10 @@
         <button class="share-btn telegram" id="shareTelegram">Telegram</button>
         <button class="share-btn copy-link" id="shareCopyLink">העתק קישור</button>
       </div>
-      <button class="btn btn-sm" id="sendEmailBtn" style="margin-top:12px;">📧 שלח פרטים למייל שלי</button>
+      <button class="btn btn-sm" id="sendEmailBtn" style="margin-top:12px;">
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span>שלח פרטים למייל שלי</span>
+      </button>
       <p id="emailStatus" style="font-size:12px;text-align:center;margin-top:8px;display:none;"></p>
       <button class="btn btn-sm" id="openMailtoBtn" style="margin-top:8px;display:none;">פתח מייל ידני</button>
       <button class="btn" id="enterCalBtn">המשך ללוח השנה</button>
@@ -136,7 +156,7 @@
 
 <!-- Join Event Screen -->
 <div id="screen-join" class="screen">
-  <button class="back-btn" id="backFromJoin">➡️ חזור</button>
+  <button class="back-btn" id="backFromJoin"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg><span>חזרה</span></button>
   <div class="card">
     <h2>הצטרף לאירוע קיים</h2>
     <p class="desc">הזן את פרטי האירוע כדי להצטרף.</p>
@@ -152,7 +172,7 @@
 
 <!-- Calendar Screen -->
 <div id="screen-calendar" class="screen">
-  <button class="back-btn" id="logoutBtn">➡️ חזור למסך הבית</button>
+  <button class="back-btn" id="logoutBtn"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg><span>חזרה למסך הבית</span></button>
   <div class="card">
     <div class="cal-header-row">
       <div>
@@ -168,9 +188,13 @@
     <p class="date-range-info" id="dateRangeInfo" style="display:none;"></p>
 
     <div class="month-nav">
-      <button class="nav-btn" id="prevMonth">◀️</button>
+      <button class="nav-btn" id="prevMonth" aria-label="חודש קודם">
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
       <h2 id="monthLabel"></h2>
-      <button class="nav-btn" id="nextMonth">▶️</button>
+      <button class="nav-btn" id="nextMonth" aria-label="חודש הבא">
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
     </div>
     <div class="grid" id="calGrid"></div>
 
@@ -201,17 +225,25 @@
         <input type="date" id="adminDateTo" placeholder="תאריך סיום"/>
       </div>
       <button class="btn btn-sm" id="adminSetDatesBtn">עדכן טווח תאריכים</button>
-      <button class="btn btn-danger btn-sm" id="deleteEventBtn" style="margin-top:10px;">🗑️ מחק את האירוע</button>
+      <button class="btn btn-danger btn-sm" id="deleteEventBtn" style="margin-top:10px;">
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <span>מחק את האירוע</span>
+      </button>
     </div>
   </div>
 </div>
 
 <!-- AI Chatbot -->
-<button id="ai-fab" title="עוזר AI">🤖</button>
+<button id="ai-fab" title="עוזר AI" aria-label="עוזר AI">
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg>
+</button>
 <div id="ai-window">
   <div id="ai-header">
-    <span>🤖 עוזר האירוע</span>
-    <button id="ai-close">✕</button>
+    <span>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z"/></svg>
+      עוזר האירוע
+    </span>
+    <button id="ai-close" aria-label="סגור">✕</button>
   </div>
   <div id="ai-messages">
     <div class="ai-msg bot">שלום! אני יכול לעזור לך לנהל את האירוע שלך. אני יכול ליצור אירוע חדש, להצטרף לאירוע קיים, להוסיף זמינות, למצוא זמן מתאים לכולם, ועוד. במה אפשר לעזור?</div>
