@@ -56,28 +56,44 @@ if (!toastContainer) {
   document.body.appendChild(toastContainer);
 }
 
+// De-duplicate identical toasts fired within 1.5s, cap visible stack at 3,
+// and shorten defaults so confirmations feel subtle rather than loud.
+var _recentToasts = {};
+var TOAST_MAX = 3;
+
 function showToast(message, type, duration) {
+  var key = (type || 'info') + '::' + message;
+  var now = Date.now();
+  if (_recentToasts[key] && now - _recentToasts[key] < 1500) return;
+  _recentToasts[key] = now;
+
+  var existing = toastContainer.querySelectorAll('.toast');
+  if (existing.length >= TOAST_MAX) {
+    var oldest = existing[0];
+    oldest.classList.remove('show');
+    setTimeout(function() { if (oldest.parentNode) oldest.remove(); }, 280);
+  }
+
   var toast = document.createElement('div');
   toast.className = 'toast ' + (type || 'info');
-  var icon = '';
-  if (type === 'success') icon = '✅';
-  else if (type === 'error') icon = '❌';
-  else if (type === 'warning') icon = '⚠️';
-  else icon = 'ℹ️';
-
-  toast.innerHTML = '<span class="toast-icon">' + icon + '</span>' + message;
+  var icon = type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '!' : 'i';
+  toast.innerHTML = '<span class="toast-icon">' + icon + '</span><span class="toast-text">' + message + '</span>';
   toastContainer.appendChild(toast);
 
-  setTimeout(function() {
-    toast.classList.add('show');
-  }, 10);
+  void toast.offsetWidth;
+  requestAnimationFrame(function() { toast.classList.add('show'); });
 
+  var def = (type === 'error' || type === 'warning') ? 3800 : 2400;
   setTimeout(function() {
     toast.classList.remove('show');
+    var removed = false;
     toast.addEventListener('transitionend', function() {
-      toast.remove();
+      if (removed) return;
+      removed = true;
+      if (toast.parentNode) toast.remove();
     });
-  }, duration || 3000);
+    setTimeout(function() { if (!removed && toast.parentNode) toast.remove(); }, 600);
+  }, duration || def);
 }
 
 // Screen management
@@ -95,7 +111,30 @@ function showScreen(screenId) {
   var onGate = (screenId === 'screen-login');
   if (appHeader) appHeader.style.display = onGate ? 'none' : 'flex';
   if (aiFab) aiFab.style.display = onGate ? 'none' : 'flex';
+  // Pre-fill the create-event form with the signed-in user's name + email
+  // as editable defaults the first time they arrive at the screen.
+  if (screenId === 'screen-new') prefillCreateEventForm();
   window.scrollTo(0, 0);
+}
+
+// Pre-fill the create-event form with the logged-in user's name + email.
+// Fields remain fully editable — the Google email is just a default, and a
+// small hint tells the user they can change it. The hint hides if they do.
+function prefillCreateEventForm() {
+  if (!state.user || state.isGuest) return;
+  var nameInput = document.getElementById('newOrgName');
+  var emailInput = document.getElementById('newOrgEmail');
+  var hint = document.getElementById('emailAutoHint');
+  if (nameInput && !nameInput.value && state.user.name && state.user.name !== 'אורח') {
+    nameInput.value = state.user.name;
+  }
+  if (emailInput && state.user.email) {
+    if (!emailInput.value) emailInput.value = state.user.email;
+    if (hint) hint.style.display = (emailInput.value === state.user.email) ? 'flex' : 'none';
+    emailInput.oninput = function() {
+      if (hint) hint.style.display = (this.value === state.user.email) ? 'flex' : 'none';
+    };
+  }
 }
 
 // Theme: automatic based on sunset/sunrise at user's location.
@@ -544,8 +583,9 @@ function renderSel() {
           item.querySelector('.del-entry').addEventListener('click', function() {
             var updated = entries.slice();
             updated.splice(idx, 1);
-            if (updated.length === 0) dbRemove('events/' + state.eventKey + '/availability/' + key).then(function() { showToast('הזמינות נמחקה', 'info'); });
-            else dbSet('events/' + state.eventKey + '/availability/' + key, updated).then(function() { showToast('הזמינות נמחקה', 'info'); });
+            // Silent delete — the row disappearing from the list is feedback enough.
+            if (updated.length === 0) dbRemove('events/' + state.eventKey + '/availability/' + key);
+            else dbSet('events/' + state.eventKey + '/availability/' + key, updated);
           });
         }
         list.appendChild(item);
@@ -582,7 +622,8 @@ function addAvailability() {
   }).then(function() {
     var wasEdit = state.editingEntry !== null;
     cancelEdit();
-    showToast(wasEdit ? 'הזמינות עודכנה בהצלחה!' : 'הזמינות נוספה בהצלחה!', 'success');
+    // Only toast on edit — a new entry shows up in the list, which is feedback enough.
+    if (wasEdit) showToast('הזמינות עודכנה', 'success');
     // Optionally sync to Google Calendar
     if (state.syncCalendar) {
       syncAvailabilityToCalendar(key, note);
@@ -661,16 +702,31 @@ function logout() {
   document.getElementById('sendEmailBtn').disabled = false;
   document.getElementById('openMailtoBtn').style.display = 'none';
   document.getElementById('emailStatus').style.display = 'none';
-  showToast('יצאת מהאירוע', 'info');
+  // No toast — the screen change itself is sufficient feedback.
   showScreen('screen-home');
   window.state = state; // Re-expose updated state
 }
 
 // Share functions
+// Inline feedback — the clicked button itself flashes "✓ הועתק" for 1.5s.
+// Less intrusive than a toast because the user is already looking at the button.
+function _flashCopyButton(btn, txt) {
+  if (!btn) return;
+  var orig = btn.textContent;
+  btn.textContent = txt || '✓ הועתק';
+  btn.classList.add('copied');
+  clearTimeout(btn._flashTimer);
+  btn._flashTimer = setTimeout(function() {
+    btn.textContent = orig;
+    btn.classList.remove('copied');
+  }, 1500);
+}
+
 function copyCode() {
   var code = document.getElementById('eventCodeDisplay').textContent;
+  var btn = document.getElementById('copyBtn');
   navigator.clipboard.writeText(code).then(function() {
-    showToast('קוד האירוע הועתק!', 'success');
+    _flashCopyButton(btn);
   }).catch(function(err) {
     showToast('שגיאה בהעתקת קוד: ' + err, 'error');
   });
@@ -696,9 +752,10 @@ function shareCopyLink() {
   var eventName = state.eventName;
   var eventCode = state.eventCode;
   var url = window.location.href.split('?')[0];
-  var text = `היי! אני מזמין/ה אותך לאירוע ${eventName} ב-Quick Event Coordinator.\n\nקוד גישה: ${eventCode}\n\nלהצטרפות: ${url}`; 
+  var text = `היי! אני מזמין/ה אותך לאירוע ${eventName} ב-Quick Event Coordinator.\n\nקוד גישה: ${eventCode}\n\nלהצטרפות: ${url}`;
+  var btn = document.getElementById('shareCopyLink');
   navigator.clipboard.writeText(text).then(function() {
-    showToast('פרטי האירוע הועתקו!', 'success');
+    _flashCopyButton(btn);
   }).catch(function(err) {
     showToast('שגיאה בהעתקת פרטים: ' + err, 'error');
   });
@@ -832,7 +889,7 @@ function continueAsGuest() {
   if (dashBtn) dashBtn.style.display = 'none';
   var notice = document.getElementById('guestModeNotice');
   if (notice) notice.style.display = 'block';
-  showToast('המשכת כאורח.', 'info', 3000);
+  // The persistent guest-notice bar is enough — no toast on top of it.
 }
 
 // Kept for backward compatibility with any lingering callers

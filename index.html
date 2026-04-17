@@ -108,7 +108,8 @@
     <label for="newOrgName">שם המארגן/ת</label>
     <input type="text" id="newOrgName" placeholder="שמך"/>
     <label for="newOrgEmail">אימייל המארגן/ת (אופציונלי, לשליחת פרטים)</label>
-    <input type="text" id="newOrgEmail" placeholder="your@example.com"/>
+    <input type="email" id="newOrgEmail" placeholder="your@example.com" autocomplete="email"/>
+    <p id="emailAutoHint" class="input-hint" style="display:none;"><span class="dot-indicator"></span>מולא אוטומטית מחשבון Google שלך — ניתן לשנות</p>
     <label for="newDateFrom">תאריך התחלה (אופציונלי)</label>
     <input type="date" id="newDateFrom"/>
     <label for="newDateTo">תאריך סיום (אופציונלי)</label>
