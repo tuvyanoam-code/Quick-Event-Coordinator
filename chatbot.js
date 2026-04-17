@@ -264,7 +264,7 @@
     addMsg(text,'user');
     chatHistory.push({role:'user',parts:[{text:text}]});
 
-    var typing=addMsg('מקליד...','bot');
+    var typing=addMsg('מקליד','bot');
     typing.classList.add('typing');
 
     var systemCtx='אתה עוזר AI ידידותי וחכם לאפליקציית תיאום זמינות קבוצתית בשם Quick Event Coordinator. ענה בשפה שבה המשתמש פונה אליך.\n\n';

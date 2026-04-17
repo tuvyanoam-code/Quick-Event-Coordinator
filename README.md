@@ -24,7 +24,7 @@
 | 2 | Login gate + Home screen | ✅ הושלם | [`e7c734d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/e7c734d) |
 | 3 | Create + Join flows + code/share | ✅ הושלם | [`043ad44`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/043ad44) |
 | 4 | Calendar + Admin + Availability | ✅ הושלם | _see below_ |
-| 5 | Floating UI + QA (dark + mobile) | ⏳ הבא | — |
+| 5 | Floating UI + QA (dark + mobile) | ✅ הושלם | _see below_ |
 
 ---
 
@@ -211,6 +211,73 @@
 - Theme toggle ו-loader — שלב 5.
 - בדיקת dark theme פר מסך — שלב 5.
 - Mobile responsive sweep — שלב 5.
+
+---
+
+## Stage 5 — Floating UI + Final QA ✅
+
+**מה נעשה:**
+- **AI FAB (כפתור העוזר)**:
+  - Shadow מדורג (`0 10px 28px` + `0 2px 6px`) נותן תחושת floating אמיתית.
+  - overlay גרדיאנט עדין בתוך ה-FAB (`::before` עם linear-gradient משמאל-למעלה) שמוסיף "brightness" ולא מצריך שינוי רקע.
+  - Hover: `scale(1.08) translateY(-1px)` + הגברת shadow — בולט אבל לא צעקני.
+  - אייקון ה-sparkle 22px מגיע מ-Stage 1.
+- **AI window**:
+  - גודל: 380x560 (גדול יותר), `border-radius: var(--radius-lg)` (20px), border 1px, `shadow-lg`, entrance של scale+translate.
+  - Header ב-`--surface-2` (הבחנה מ-body), h2 700/14.5px/`--ink`, אייקון ב-`--accent`, כפתור close עם hover של `--pill-bg`.
+  - Messages area: רקע `--bg` עם scroll-behavior:smooth.
+- **Message bubbles**:
+  - **Bot**: `--surface` + border `--border`, ללא פילו אפור מלא — יותר "card-ly" מאשר "chip". border-bottom-right-radius 4px לתחושה של conversational corner.
+  - **User**: accent מלא + shadow subtle + לבן. border-bottom-left-radius 4px (ה-corner מצביע חזרה אל ה-fab משמאל).
+  - `.ai-msg.typing` — לא איטליקס, אלא 3 נקודות animated (CSS `radial-gradient` עם animation) — נקי וחי יותר מ-"..." סטטי.
+- **Input row**:
+  - רקע `--surface-2`, border-top.
+  - Textarea: border 1.5px עם focus state ירוק.
+  - Send button: מרובע (38x38, radius 10) במקום עגול, עם אייקון paper-plane SVG (ב-RTL הוא מתהפך אופקית כדי להצביע לכיוון ה-input).
+- **Toast**:
+  - Padding נדיב יותר: 12px 18px 12px 14px.
+  - Font-size 13.5px, line-height 1.4.
+  - Side-stripe עבר ל-inset-inline-start:7px (במקום 6).
+- **Theme toggle**: 38x38, רוטציה 15deg ב-hover + scale 1.05. אייקון `--text-2`.
+- **Loader**: backdrop-filter blur 4px, spinner לבן 38x38 border 3px.
+- **User menu** (הדרופדאון של החשבון):
+  - border-radius עלה ל-`--radius` (12px), shadow-lg.
+  - פריטים: hover נותן `--accent-softer` background + טקסט `--accent` + אייקונים `--accent`. ברור איזה פריט הוצב עליו.
+- **Chatbot copy refresh** — הודעת הפתיחה התקצרה: "שלום! אפשר לבקש ממני ליצור אירוע, להצטרף לקיים, להוסיף זמינות, או למצוא את היום שהכי מתאים לכולם. במה אוכל לעזור?" (במקום הודעה ארוכה עם מעט רלוונטיות). Placeholder ב-"שאלו אותי משהו…" (רבים + ellipsis אמיתי). "מקליד..." → "מקליד" (הנקודות animated מה-CSS).
+- **Mobile sweep**:
+  - Login hero 34→28, home greeting 28→24.
+  - Day cells 76px→58px, padding מופחת, dots 7px→5.5px.
+  - AI FAB ב-mobile 52→50, window בגודל מלא (left/right 10px).
+  - Admin date-row flex-wrap, כפתור עדכון מלא-רוחב במובייל.
+- **Accessibility + QA**:
+  - `*:focus-visible` — outline accent 2px, offset 2px על כל הרכיבים האינטראקטיביים. נגישות מקלדת מלאה.
+  - `::selection` — רקע `--accent-soft` וטקסט `--ink`.
+  - `font-variant-numeric: tabular-nums` על קוד האירוע, join-code-input, והיום ב-grid — ספרות רוחב-קבוע.
+  - `:root { color-scheme: light }` + `[data-theme="dark"] { color-scheme: dark }` — למערכת ההפעלה יש רמז ל-form controls (scrollbars, date pickers) להתאים.
+  - `will-change: transform` על elements שעוברים transform חוזר (fab, home-card, btn) למנוע jitter.
+- **Dark theme** — כל הטוקנים הוגדרו ב-`:root` ו-`[data-theme="dark"]` החל משלב 1. בדיקת cross-screen: login card, home cards, calendar grid, availability items (mine variant), admin panel — כולם משתמשים בטוקנים שמתאימים. Google sign-in button נשאר לבן גם ב-dark (brand convention). Share icons WhatsApp/Telegram נשארים בצבעים המותגיים בכל הנושאים.
+
+**קבצים ששונו:**
+- `index.html` — AI window פותחת עם הודעה מקוצרת, placeholder עודכן, send button עם SVG (paper-plane במקום ➤).
+- `styles.css` — בלוק Stage 5 בסוף: AI FAB עם gradient overlay, AI window עם shadow-lg, bot bubble כ-card, user bubble ב-accent, typing dots animated, send button מרובע עם אייקון. Toast padding + stripe refined. Theme toggle rotation + hover. Loader backdrop-blur. User menu accent-softer hover. Mobile sweeps מותאמים לכל מסך. Final QA: focus-visible, selection, tabular-nums, color-scheme.
+- `chatbot.js` — "מקליד..." → "מקליד" (הנקודות עכשיו CSS).
+
+**החלטות עיצוב לתיעוד:**
+- **Bot bubble כ-card (לא fill)** — brickato-inspired: הודעות AI מרגישות כ-"מסמכים" קטנים ולא כ-"הודעות chat צבעוניות". מקצועי יותר.
+- **Send button מרובע** — עם paper-plane, מתאים יותר ל-corner של input row מאשר עיגול. הוא לא "FAB", הוא "action".
+- **Typing dots עם CSS-only** — אין צורך ב-JS loop או איטליקס. CSS radial-gradient + animation נותן אפקט חי ונקי.
+- **color-scheme hint** — חשוב ל-native form controls. Date picker של Chrome למשל מקבל dark/light theme אוטומטית על פי זה.
+
+**מה **לא** בוצע במתכוון:**
+- לא הוחלף מצב guest notice (ב-pill Stage 2), נשאר.
+- לא נוגעים לקוד Firebase — אין סיבה.
+- לא משנים placeholder של date inputs — הדפדפן מחליט על פי locale.
+
+---
+
+## הצעד הבא אחרי 5 השלבים
+
+בהתאם לבקשה של המשתמש — חזרה לעיצוב login הקודם שהיה אלגנטי יותר, מיושר נורמלי עם פס מפריד יפה, אבל **עם שמירת הקופי החדש** על היעילות של האתר. זה יהיה commit נפרד שבא אחרי השלמת שלב 5.
 
 ---
 
