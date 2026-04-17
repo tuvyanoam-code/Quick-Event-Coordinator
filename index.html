@@ -47,60 +47,68 @@
 
 <!-- Login gate — default active; app is blocked until user chooses an identity -->
 <div id="screen-login" class="screen active">
-  <div class="login-card card">
-    <h1 class="logo">Quick Event Coordinator</h1>
-    <h2>ברוך הבא!</h2>
-    <p>תיאום זמינות קבוצתי קל ומהיר.<br/>בחר איך להמשיך כדי להתחיל.</p>
-    <button class="google-signin-btn" onclick="signInWithGoogle(false)">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon"/>
-      התחבר עם Google
-    </button>
-    <div class="login-divider"><span>או</span></div>
-    <button class="guest-mode-btn" onclick="continueAsGuest()">
-      המשך כאורח
-    </button>
-    <p class="login-fine-print">התחברות עם Google מאפשרת גישה ללוח המחוונים האישי שלך ולסנכרון יומן Google. כאורח אפשר ליצור/להצטרף לאירועים אבל לא לסנכרן ליומן.</p>
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="login-brand-mark" aria-hidden="true"></span>
+      <span class="login-brand-name">Quick Event Coordinator</span>
+    </div>
+    <h1 class="login-hero">תיאום זמינות, בלי הרעש.</h1>
+    <p class="login-sub">צרו אירוע, שתפו קוד, וראו מתי כולם פנויים — במקום אחד, בלי טבלאות ובלי הודעות חוזרות.</p>
+    <div class="login-actions">
+      <button class="google-signin-btn" onclick="signInWithGoogle(false)">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt=""/>
+        <span>התחברות עם Google</span>
+      </button>
+      <button class="guest-mode-btn" onclick="continueAsGuest()">המשך ללא התחברות</button>
+    </div>
+    <p class="login-fine-print">התחברות שומרת את האירועים שלכם ומאפשרת סנכרון ל-Google Calendar. אורחים יכולים ליצור ולהצטרף לאירועים, אבל לא לסנכרן ליומן.</p>
   </div>
 </div>
 
 <!-- Guest Mode Notice -->
 <div class="guest-notice" id="guestModeNotice" style="display:none;">
-  אתה במצב אורח. <a href="#" onclick="signInWithGoogle(false);return false;">התחבר עם Google</a> כדי לגשת ללוח המחוונים האישי ולסנכרון יומן Google.
+  <span>מצב אורח — האירועים שלכם לא נשמרים בחשבון.</span>
+  <a href="#" onclick="signInWithGoogle(false);return false;">התחברות עם Google</a>
 </div>
 
 <!-- Home Screen -->
 <div id="screen-home" class="screen">
-  <h1 class="logo">Quick Event Coordinator</h1>
-  <p class="subtitle">תיאום זמינות קבוצתי קל ומהיר</p>
+  <div class="home-header">
+    <h1 class="logo">Quick Event Coordinator</h1>
+    <p class="home-greeting" id="homeGreeting">מה נתאם היום?</p>
+  </div>
 
   <div class="home-cards">
-    <div class="home-card" id="goNew">
+    <button class="home-card" id="goNew" type="button">
       <div class="home-icon new">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
       </div>
       <div class="home-card-text">
-        <h2>צור אירוע חדש</h2>
-        <p>הגדר אירוע ושתף את הקוד עם הצוות</p>
+        <h2>אירוע חדש</h2>
+        <p>הגדירו טווח תאריכים, שתפו קוד, וראו מתי כולם פנויים.</p>
       </div>
-    </div>
-    <div class="home-card" id="goJoin">
+      <svg class="home-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="home-card" id="goJoin" type="button">
       <div class="home-icon join">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </div>
       <div class="home-card-text">
-        <h2>הצטרף לאירוע קיים</h2>
-        <p>הזן את הקוד שקיבלת והצטרף</p>
+        <h2>הצטרפות לאירוע</h2>
+        <p>הזינו את הקוד שקיבלתם וסמנו מתי אתם זמינים.</p>
       </div>
-    </div>
-    <div class="home-card" id="goDashboard" style="display:none;">
+      <svg class="home-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="home-card" id="goDashboard" type="button" style="display:none;">
       <div class="home-icon dashboard">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
       </div>
       <div class="home-card-text">
-        <h2>לוח המחוונים שלי</h2>
-        <p>כל האירועים שלך במקום אחד</p>
+        <h2>האירועים שלי</h2>
+        <p>כל האירועים שיצרתם או הצטרפתם אליהם — במקום אחד.</p>
       </div>
-    </div>
+      <svg class="home-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
   </div>
 </div>
 

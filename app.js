@@ -114,7 +114,22 @@ function showScreen(screenId) {
   // Pre-fill the create-event form with the signed-in user's name + email
   // as editable defaults the first time they arrive at the screen.
   if (screenId === 'screen-new') prefillCreateEventForm();
+  if (screenId === 'screen-home') updateHomeGreeting();
   window.scrollTo(0, 0);
+}
+
+// Personalized greeting on the home screen. Signed-in users see their first
+// name; guests get a neutral nudge. Keeps the home screen feeling human
+// instead of a generic dashboard.
+function updateHomeGreeting() {
+  var el = document.getElementById('homeGreeting');
+  if (!el) return;
+  if (state.user && !state.isGuest && state.user.name && state.user.name !== 'משתמש') {
+    var firstName = String(state.user.name).trim().split(/\s+/)[0];
+    el.textContent = 'שלום, ' + firstName + '. מה נתאם היום?';
+  } else {
+    el.textContent = 'מה נתאם היום?';
+  }
 }
 
 // Pre-fill the create-event form with the logged-in user's name + email.
@@ -1016,6 +1031,7 @@ window.cancelEdit = cancelEdit;
 window.initializeGuestMode = initializeGuestMode;
 window.continueAsGuest = continueAsGuest;
 window.setupGuestUser = setupGuestUser;
+window.updateHomeGreeting = updateHomeGreeting;
 window.state = state; // Expose state for other modules to access
 window.dbSet = dbSet;
 window.dbUpdate = dbUpdate;

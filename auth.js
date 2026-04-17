@@ -153,6 +153,8 @@ auth.onAuthStateChanged(function(user) {
     if (loginEl && loginEl.classList.contains('active') && window.showScreen) {
       window.showScreen('screen-home');
     }
+    // Refresh the personalized greeting even if they were already on home
+    if (window.updateHomeGreeting) window.updateHomeGreeting();
     hideLoader();
   } else {
     console.log('User not authenticated.');

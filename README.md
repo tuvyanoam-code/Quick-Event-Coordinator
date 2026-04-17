@@ -21,8 +21,8 @@
 | שלב | תחום | סטטוס | Commit |
 |---|---|---|---|
 | 1 | יסודות — tokens, פונט, אייקונים | ✅ הושלם | [`93a385d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/93a385d) |
-| 2 | Login gate + Home screen | ⏳ הבא | — |
-| 3 | Create + Join flows + code/share | ⏳ ממתין | — |
+| 2 | Login gate + Home screen | ✅ הושלם | _see below_ |
+| 3 | Create + Join flows + code/share | ⏳ הבא | — |
 | 4 | Calendar + Admin + Availability | ⏳ ממתין | — |
 | 5 | Floating UI + QA (dark + mobile) | ⏳ ממתין | — |
 
@@ -63,6 +63,42 @@
 - Toast icons — עדיין chars טקסטואליים (`✓ ✕ ! i`). עדיף להשאיר קטנים בעיגולים.
 - Chatbot styling — שלב 5.
 - Admin panel polish מעמיק — שלב 4.
+
+---
+
+## Stage 2 — Login gate + Home screen ✅
+
+**מה נעשה:**
+- **Login gate שוכתב** — hero-grade treatment. מעל הכרטיס: פס gradient דק. בראש הכרטיס: brandmark קטן (ריבוע gradient + "Quick Event Coordinator" באפור). הגיבור: **"תיאום זמינות, בלי הרעש."** 34px/weight 800/letter-spacing -0.032em. Sub-headline ממוקד-תועלת. כפתור Google כ-primary (לבן, כלל סטנדרט של Google), "המשך ללא התחברות" כקישור שקט מתחת. פסקת fine-print עם separator.
+- **Home screen שוכתב** — כותרת חדשה במקום subtitle:
+  - מחובר: **"שלום, [שם פרטי]. מה נתאם היום?"**
+  - אורח/לא מחובר: **"מה נתאם היום?"**
+  - פונקציה `updateHomeGreeting()` נקראת מ-`showScreen('screen-home')` וגם מ-`onAuthStateChanged`.
+- **Home cards ל-`<button>`** — נגישות טובה יותר (keyboard, screen reader), hover state עם chevron שמופיע ומתקדם לשמאל (`translateX(0)` מ-6px). בורדר מודגש ב-`--accent` בזמן hover במקום shadow בלבד. השארתי את ה-`.home-card` class כך שכללי stage 1 עדיין תקפים.
+- **Guest notice refined** — מ-באנר מלא-רוחב ל-pill קומפקטית עם כפתור "התחברות עם Google" משני בתוכה.
+- **Copy מקצועי חדש:**
+  - "צור אירוע חדש" → **"אירוע חדש"** / "הגדירו טווח תאריכים, שתפו קוד, וראו מתי כולם פנויים."
+  - "הצטרף לאירוע קיים" → **"הצטרפות לאירוע"** / "הזינו את הקוד שקיבלתם וסמנו מתי אתם זמינים."
+  - "לוח המחוונים שלי" → **"האירועים שלי"** / "כל האירועים שיצרתם או הצטרפתם אליהם — במקום אחד."
+
+**קבצים ששונו:**
+- `index.html` — מבנה חדש ל-`#screen-login` (`.login-card` + `.login-brand` + `.login-hero` + `.login-sub` + `.login-actions` + `.login-fine-print`). מבנה חדש ל-`#screen-home` (`.home-header` + `#homeGreeting` + `.home-cards`). כרטיסי home עברו ל-`<button>` עם `.home-card-chev`.
+- `styles.css` — בלוק שלב 2 בסוף הקובץ: login card premium עם gradient stripe ו-fadeUp, home-header + home-greeting typography, `button.home-card` reset וחידוד hover, `.home-card-chev` animation, `.guest-notice` ל-pill.
+- `app.js` — `updateHomeGreeting()` חדש; קריאה שלו מ-`showScreen()` כשעוברים ל-home; חשיפה ל-`window`.
+- `auth.js` — קריאה ל-`window.updateHomeGreeting()` בתוך `onAuthStateChanged` כדי שהברכה תתעדכן גם אם המשתמש כבר על home.
+
+**החלטות עיצוב לתיעוד:**
+- **הגיבור הוא אמירה, לא כותרת.** "תיאום זמינות, בלי הרעש" הוא benefit-driven (מזהה את ה-pain point של רעש התיאום). בניגוד ל-"ברוך הבא" הכללי. עוקב אחר brickato ("בונים חכם, לבנה אחר לבנה").
+- **Google button סטנדרטי Material** — אף פעם לא כחול כבד, תמיד לבן עם border אפור בהיר. זה מה שמשתמשים מזהים ולוחצים עליו מיידית.
+- **כפתור guest ככמעט-קישור** — כי ה-primary path היא התחברות עם Google. אורחים פסיביים, לא מקבלים דגש.
+- **Home card chevron** — רק ב-hover, מחליק לשמאל (כיוון הלחיצה ב-RTL). סימון ויזואלי חזק של "זה לחיץ" בלי לצעוק.
+- **home-header .logo רישום compact** — ב-home אנחנו לא עושים brand showcase (כמו ב-login). רק רמז קטן באפור, והדגש הוא על הגרייטינג. חיסכון במקום, יותר מקום לתוכן.
+
+**מה **לא** נעשה בשלב 2 (נשאר לשלבים הבאים):**
+- Screen-new / screen-join forms — שלב 3.
+- Code box / share buttons refresh — שלב 3.
+- Dashboard event items — שלב 3 או 4.
+- Calendar screen — שלב 4.
 
 ---
 
