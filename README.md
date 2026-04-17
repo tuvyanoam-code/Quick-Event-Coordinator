@@ -20,7 +20,7 @@
 
 | שלב | תחום | סטטוס | Commit |
 |---|---|---|---|
-| 1 | יסודות — tokens, פונט, אייקונים | ✅ הושלם | _see below_ |
+| 1 | יסודות — tokens, פונט, אייקונים | ✅ הושלם | [`93a385d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/93a385d) |
 | 2 | Login gate + Home screen | ⏳ הבא | — |
 | 3 | Create + Join flows + code/share | ⏳ ממתין | — |
 | 4 | Calendar + Admin + Availability | ⏳ ממתין | — |
