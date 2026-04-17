@@ -814,18 +814,18 @@ button:focus-visible,.home-card:focus-visible{
    Premium first-impression surfaces with brickato-style restraint
    ═══════════════════════════════════════════════════════════ */
 
-/* ── LOGIN GATE ─────────────────────────────────────────────── */
+/* ── LOGIN GATE — centered, divider, outlined guest CTA ──────── */
 
 #screen-login.active{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   min-height:calc(100vh - 80px);
-  max-width:520px;text-align:right;
+  max-width:460px;text-align:center;
 }
 
 .login-card{
   background:var(--surface);
   border-radius:var(--radius-lg);
-  padding:56px 44px 40px;
+  padding:48px 36px 36px;
   box-shadow:var(--shadow-lg);
   border:1px solid var(--border);
   width:100%;
@@ -836,66 +836,97 @@ button:focus-visible,.home-card:focus-visible{
 .login-card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:3px;
   background:linear-gradient(90deg,var(--accent) 0%,var(--accent-3) 50%,var(--accent) 100%);
-  background-size:200% 100%;
   opacity:.9;
 }
+
+/* Small wordmark, centered above hero */
 .login-brand{
-  display:inline-flex;align-items:center;gap:10px;margin-bottom:40px;
-  font-size:14px;font-weight:600;color:var(--muted);letter-spacing:-.01em;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  margin-bottom:22px;
+  font-size:13px;font-weight:600;color:var(--muted);letter-spacing:-.005em;
 }
 .login-brand-mark{
-  width:20px;height:20px;border-radius:5px;
+  width:18px;height:18px;border-radius:5px;
   background:linear-gradient(135deg,var(--accent) 0%,var(--accent-3) 100%);
   box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.15);
   flex-shrink:0;
 }
-.login-brand-name{color:var(--text)}
+.login-brand-name{color:var(--text-2)}
+
+/* Hero tagline, two-line break for rhythm */
 .login-hero{
-  font-size:34px;font-weight:800;line-height:1.15;letter-spacing:-0.032em;
-  color:var(--ink);margin-bottom:16px;
+  font-size:30px;font-weight:800;line-height:1.18;letter-spacing:-0.03em;
+  color:var(--ink);margin-bottom:14px;
 }
 .login-sub{
-  font-size:16px;line-height:1.6;color:var(--text-2);
-  margin-bottom:36px;max-width:420px;font-weight:400;
+  font-size:15px;line-height:1.65;color:var(--text-2);
+  margin:0 auto 30px;max-width:360px;font-weight:400;
 }
-.login-actions{
-  display:flex;flex-direction:column;gap:12px;margin-bottom:28px;
-}
+
+/* Google sign-in button — primary CTA, centered, comfortable width */
 #screen-login .google-signin-btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:12px;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
   background:#ffffff;color:#1f2937;
-  border:1.5px solid #dadce0;border-radius:12px;
-  padding:13px 22px;font-size:15px;font-weight:500;
+  border:1.5px solid #dadce0;border-radius:10px;
+  padding:12px 22px;font-size:15px;font-weight:500;
   font-family:inherit;cursor:pointer;
   transition:box-shadow .2s,border-color .15s,transform .1s,background .15s;
-  width:100%;box-shadow:0 1px 2px rgba(0,0,0,.04);
+  width:100%;max-width:300px;margin:0 auto;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
 }
 #screen-login .google-signin-btn:hover{
-  box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:#b8bec4;background:#fafafa;
+  box-shadow:0 4px 14px rgba(0,0,0,.08);
+  border-color:#b8bec4;background:#fafafa;
+  transform:translateY(-1px);
 }
-#screen-login .google-signin-btn:active{transform:translateY(1px)}
+#screen-login .google-signin-btn:active{transform:translateY(0)}
 #screen-login .google-signin-btn img{width:20px;height:20px}
 [data-theme="dark"] #screen-login .google-signin-btn{
   background:#ffffff;color:#1f2937;border-color:#dadce0;
 }
 [data-theme="dark"] #screen-login .google-signin-btn:hover{background:#f7f7f7}
 
+/* Divider with "או" — lines on both sides */
+#screen-login .login-divider{
+  display:flex;align-items:center;gap:14px;
+  margin:22px auto;color:var(--muted);
+  font-size:12px;font-weight:500;letter-spacing:.02em;
+  width:100%;max-width:300px;
+}
+#screen-login .login-divider::before,
+#screen-login .login-divider::after{
+  content:"";flex:1;height:1px;background:var(--border);
+}
+#screen-login .login-divider span{
+  flex-shrink:0;color:var(--muted-2);
+}
+
+/* Outlined guest-mode button — matches Google button width */
 #screen-login .guest-mode-btn{
-  background:transparent;border:none;
-  color:var(--muted);font-size:13.5px;font-family:inherit;
-  padding:10px 14px;border-radius:8px;cursor:pointer;
-  align-self:center;transition:color .15s,background .15s;font-weight:500;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;
+  border:1.5px solid var(--border);color:var(--text);
+  font-size:14px;font-weight:500;font-family:inherit;
+  padding:11px 20px;border-radius:10px;cursor:pointer;
+  width:100%;max-width:300px;margin:0 auto;
+  transition:border-color .15s,color .15s,background .15s,transform .1s;
+  text-decoration:none;
 }
-#screen-login .guest-mode-btn:hover{color:var(--text);background:var(--pill-bg)}
+#screen-login .guest-mode-btn:hover{
+  border-color:var(--border-strong);
+  color:var(--ink);
+  background:var(--surface-2);
+  transform:translateY(-1px);
+}
+#screen-login .guest-mode-btn:active{transform:translateY(0)}
 
+/* Fine print at the bottom — gentle separator above */
 .login-fine-print{
-  font-size:12px;color:var(--muted);line-height:1.6;
-  padding-top:24px;border-top:1px solid var(--border);
-  margin-top:4px;letter-spacing:0;max-width:440px;
+  font-size:12px;color:var(--muted);line-height:1.65;
+  padding-top:24px;margin-top:28px;
+  border-top:1px solid var(--border);
+  letter-spacing:0;max-width:380px;margin-left:auto;margin-right:auto;
 }
-
-/* Hide the login-divider if markup still has it (legacy) */
-#screen-login .login-divider{display:none}
 
 /* ── HOME SCREEN ────────────────────────────────────────────── */
 
@@ -970,9 +1001,10 @@ button.home-card:hover .home-card-chev{
 
 /* Mobile refinements */
 @media(max-width:560px){
-  .login-card{padding:40px 26px 30px;border-radius:var(--radius)}
-  .login-hero{font-size:28px}
-  .login-sub{font-size:15px;margin-bottom:28px}
+  .login-card{padding:40px 24px 28px;border-radius:var(--radius)}
+  .login-hero{font-size:26px;line-height:1.2}
+  .login-sub{font-size:14.5px;margin-bottom:26px}
+  #screen-login .login-divider{margin:18px auto}
   .home-greeting{font-size:24px}
   button.home-card{padding:16px 18px;gap:14px}
   .home-header{margin-bottom:28px}

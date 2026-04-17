@@ -275,9 +275,27 @@
 
 ---
 
-## הצעד הבא אחרי 5 השלבים
+## Post-stage refinement — Login layout ✅
 
-בהתאם לבקשה של המשתמש — חזרה לעיצוב login הקודם שהיה אלגנטי יותר, מיושר נורמלי עם פס מפריד יפה, אבל **עם שמירת הקופי החדש** על היעילות של האתר. זה יהיה commit נפרד שבא אחרי השלמת שלב 5.
+בעקבות משוב המשתמש אחרי שלב 5: הוחזר לעיצוב login מיושר-מרכז עם פס מפריד אלגנטי, אבל **עם הקופי החדש של שלב 2** (Hero tagline + sub על היעילות).
+
+**מה השתנה:**
+- `text-align:right` → **`text-align:center`** על `#screen-login.active`.
+- הוסר `.login-actions` wrapper — הכפתורים עכשיו flow טבעי במרכז.
+- Hero `login-hero` 34px → **30px**, עם `<br/>` ידני שמחלק "תיאום זמינות,\nבלי הרעש." לשתי שורות. קצב ויזואלי יותר נוח במרכז.
+- `login-sub` הצטמצם ל-max-width 360px, margin אוטומטי ל-centering.
+- Google sign-in button: `width:100%;max-width:300px;margin:0 auto`. גודל קבוע, לא stretched.
+- **`.login-divider`** שוחזר — `display:flex` עם `::before`/`::after` כ-lines משני הצדדים של "או". max-width 300px כמו הכפתורים, צבע `--muted-2` לטקסט, `--border` לקוים.
+- **Guest button OUTLINED** (לא קישור): `border:1.5px solid var(--border)`, width 300px בדיוק כמו Google button. Hover מעדן border + רקע `--surface-2` + lift עדין.
+- Fine print: margin auto, max-width 380px, centered.
+
+**שומר:**
+- כל הקופי של שלב 2 (Hero + sub על היעילות והערך).
+- Brand mark בראש (`.login-brand` + gradient square).
+- Gradient top stripe על הקארד.
+- fadeUp entrance animation.
+
+**Commit:** נפרד, נקרא "post-stage: restore centered login layout with divider".
 
 ---
 
