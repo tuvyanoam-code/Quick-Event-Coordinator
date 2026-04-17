@@ -23,8 +23,9 @@
 | 1 | יסודות — tokens, פונט, אייקונים | ✅ הושלם | [`93a385d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/93a385d) |
 | 2 | Login gate + Home screen | ✅ הושלם | [`e7c734d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/e7c734d) |
 | 3 | Create + Join flows + code/share | ✅ הושלם | [`043ad44`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/043ad44) |
-| 4 | Calendar + Admin + Availability | ✅ הושלם | _see below_ |
-| 5 | Floating UI + QA (dark + mobile) | ✅ הושלם | _see below_ |
+| 4 | Calendar + Admin + Availability | ✅ הושלם | [`d3d369f`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/d3d369f) |
+| 5 | Floating UI + QA (dark + mobile) | ✅ הושלם | [`7af7695`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/7af7695) |
+| — | Post-stage: login layout restore | ✅ הושלם | [`534e766`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/534e766) |
 
 ---
 
