@@ -22,7 +22,7 @@
 |---|---|---|---|
 | 1 | יסודות — tokens, פונט, אייקונים | ✅ הושלם | [`93a385d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/93a385d) |
 | 2 | Login gate + Home screen | ✅ הושלם | [`e7c734d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/e7c734d) |
-| 3 | Create + Join flows + code/share | ✅ הושלם | _see below_ |
+| 3 | Create + Join flows + code/share | ✅ הושלם | [`043ad44`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/043ad44) |
 | 4 | Calendar + Admin + Availability | ⏳ הבא (דורש אישור לפני המשך) | — |
 | 5 | Floating UI + QA (dark + mobile) | ⏳ ממתין | — |
 
