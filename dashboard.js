@@ -9,10 +9,10 @@ function loadUserDashboard(uid) {
       eventListDiv.innerHTML = ""; // Clear previous list
 
       if (!events) {
-        eventListDiv.innerHTML = 
-          `<div style="text-align: center; padding: 20px; color: var(--muted);">
-            <p>עדיין לא יצרת או הצטרפת לאירועים.</p>
-            <button class="btn btn-sm" style="width: auto; margin-top: 15px;" onclick="showScreen('screen-home')">צור/הצטרף לאירוע</button>
+        eventListDiv.innerHTML =
+          `<div class="dashboard-empty">
+            <p>עדיין לא יצרתם או הצטרפתם לאירועים.</p>
+            <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-home')">חזרה למסך הבית</button>
           </div>`;
         hideLoader();
         return;
@@ -48,16 +48,21 @@ function loadUserDashboard(uid) {
           }
 
           var esc = window.escapeHtml || function(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+          var roleBadge = event.role === 'admin'
+            ? '<span class="event-item-role role-admin">מארגן</span>'
+            : '<span class="event-item-role role-participant">משתתף</span>';
           eventItem.innerHTML =
-            '<h3></h3>' +
-            '<p>תפקיד: ' + (event.role === "admin" ? "מארגן" : "משתתף") + '</p>' +
+            '<div class="event-item-head">' +
+              '<h3></h3>' +
+              roleBadge +
+            '</div>' +
             '<div class="meta">' +
               '<span>' + participantCount + ' משתתפים</span>' +
-              '<span>' + esc(dateRangeText) + '</span>' +
+              (dateRangeText ? '<span>' + esc(dateRangeText) + '</span>' : '') +
             '</div>' +
             '<div class="actions">' +
-              '<button class="btn view-btn" type="button">צפה באירוע</button>' +
-              '<button class="btn leave-btn" type="button">עזוב אירוע</button>' +
+              '<button class="btn btn-primary view-btn" type="button">פתיחת האירוע</button>' +
+              '<button class="btn btn-ghost leave-btn" type="button">עזיבה</button>' +
             '</div>';
           // Safely set name as textContent so HTML in the name can't inject
           eventItem.querySelector('h3').textContent = event.data.name || '';
@@ -100,13 +105,14 @@ function leaveEvent(eventKey, eventName, targetBtn) {
   // Use double-click confirmation instead of native confirm()
   if (targetBtn && !targetBtn._confirming) {
     targetBtn._confirming = true;
-    targetBtn.textContent = '⚠️ לחץ שוב לאישור';
-    targetBtn.style.background = '#991b1b';
-    window.showToast('לחץ שוב תוך 5 שניות לאישור עזיבה', 'warning', 5000);
+    var originalText = targetBtn.textContent;
+    targetBtn.textContent = 'לחץ שוב לאישור';
+    targetBtn.classList.add('confirming');
+    window.showToast('לחצו שוב תוך 5 שניות לאישור עזיבה', 'warning', 5000);
     _leaveConfirmTimer = setTimeout(function() {
       targetBtn._confirming = false;
-      targetBtn.textContent = 'עזוב אירוע';
-      targetBtn.style.background = '';
+      targetBtn.textContent = originalText;
+      targetBtn.classList.remove('confirming');
     }, 5000);
     return;
   }
@@ -114,7 +120,7 @@ function leaveEvent(eventKey, eventName, targetBtn) {
   showLoader();
   window.dbRemove('users/' + window.state.user.id + '/events/' + eventKey)
     .then(function() {
-      window.showToast('עזבת את האירוע "' + eventName + '"', 'info');
+      // Rely on the event disappearing from the list as feedback — no toast.
       loadUserDashboard(window.state.user.id);
     })
     .catch(function(error) {

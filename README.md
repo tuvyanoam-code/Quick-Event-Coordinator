@@ -21,9 +21,9 @@
 | שלב | תחום | סטטוס | Commit |
 |---|---|---|---|
 | 1 | יסודות — tokens, פונט, אייקונים | ✅ הושלם | [`93a385d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/93a385d) |
-| 2 | Login gate + Home screen | ✅ הושלם | _see below_ |
-| 3 | Create + Join flows + code/share | ⏳ הבא | — |
-| 4 | Calendar + Admin + Availability | ⏳ ממתין | — |
+| 2 | Login gate + Home screen | ✅ הושלם | [`e7c734d`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/e7c734d) |
+| 3 | Create + Join flows + code/share | ✅ הושלם | _see below_ |
+| 4 | Calendar + Admin + Availability | ⏳ הבא (דורש אישור לפני המשך) | — |
 | 5 | Floating UI + QA (dark + mobile) | ⏳ ממתין | — |
 
 ---
@@ -99,6 +99,50 @@
 - Code box / share buttons refresh — שלב 3.
 - Dashboard event items — שלב 3 או 4.
 - Calendar screen — שלב 4.
+
+---
+
+## Stage 3 — Create / Join flows + code/share + dashboard ✅
+
+**מה נעשה:**
+- **מבנה טופס אחיד** (`.form-field` / `.form-row` / `.form-card` / `.card-head`) — כל שדה עטוף ב-wrapper בעל מרחק אנכי עקבי. שני שדות תאריך (מ-עד) ב-grid של שתי עמודות במסכי desktop, עמודה אחת במובייל.
+- **Copy מקצועי חדש** בכל הטפסים:
+  - כותרות הקארד (`card-head`): "צור אירוע חדש" → **"אירוע חדש"** + תת-כותרת benefit-focused.
+  - placeholders: "מסיבת יום הולדת" → **"פגישת צוות רבעונית"**, "שמך" → **"שם מלא"**, "שמך" ב-join → **"שם פרטי או שם מלא"**, "שם האירוע" ב-join → **"כפי שהופיע בהזמנה"**.
+  - Labels משתמשים ב-`.label-aux` לציון "(אופציונלי)" באפור בהיר.
+  - כפתורי פעולה: "צור אירוע" → **"יצירת אירוע"**, "הצטרף לאירוע" → **"הצטרפות"**, "המשך ללוח השנה" → **"המשך ללוח הזמינות"**, "שלח פרטים למייל שלי" → **"שליחה למייל שלי"**.
+- **Join code input** — input גדול במרכז בסגנון OTP: `letter-spacing:14px`, פונט monospace, 28px, placeholder "0000" במקום "4 ספרות".
+- **איזור תוצאה (code result) שוכתב**:
+  - `#codeResult` מופרד מהטופס ע"י `border-top` + `padding-top` (במקום להופיע שטוח).
+  - `.code-result-head` — label "קוד האירוע" באותיות קטנות מודגשות + תת-תיאור "שתפו את הקוד עם המשתתפים".
+  - `.code-box` — padding מורחב (20x22), code-val 36px letter-spacing 8px, copy-btn כ-pill עם icon.
+  - `.share-grid` — 3 כפתורים שווים על grid במקום flex (צפוף יותר, סימטרי יותר). הוחלף את `.share-row`.
+  - כפתורי share עם **אייקונים אמיתיים** של WhatsApp ו-Telegram (SVG path של הלוגואים). בורדר אפור במצב רגיל, בורדר צבע-מותג במצב hover. לא רקע מלא צבוע (פחות רועש).
+  - `.code-actions` — כפתורי "שליחה למייל" (ghost), "פתיחת מייל ידני" (ghost), "המשך ללוח הזמינות" (primary).
+- **Dashboard refreshed**:
+  - `.event-item` עם בורדר 1.5px ו-hover שמוסיף `--accent` border.
+  - `.event-item-head` — title + role badge (מארגן/משתתף) באותה שורה.
+  - Copy: "צפה באירוע" → **"פתיחת האירוע"**, "עזוב אירוע" → **"עזיבה"**.
+  - Empty state: `.dashboard-empty` עם padding וכפתור ghost "חזרה למסך הבית".
+  - עזיבה לא מציגה toast (אייטם נעלם מהרשימה = פידבק מספק).
+- **`_flashCopyButton` תוקן** — שומר ומשחזר `innerHTML` במקום `textContent`, כדי שכפתורים עם icon+label ישוחזרו נכון אחרי "✓ הועתק".
+
+**קבצים ששונו:**
+- `index.html` — `#screen-new`, `#screen-join`, `#screen-dashboard` שוכתבו. תוספת `.form-field`, `.form-row`, `.join-code-input`, `.code-result-head`, `.share-grid`, `.code-actions`. כפתורי share עם SVG logo paths.
+- `styles.css` — בלוק Stage 3 בסוף. כל הכללים ל-form-card, form-field, form-row, label-aux, join-code-input, code-result-head, code-box refined, copy-btn with icon, share-grid + share-btn refined, code-actions, dashboard empty + event-item.
+- `app.js` — `_flashCopyButton` עודכן ל-innerHTML. Validation copy נוקה. Toast copy (נוצר/הצטרפת) נוקה מסימני קריאה.
+- `dashboard.js` — `.dashboard-empty` state חדש, `event-item` markup עודכן עם role-badge, copy מקצועי, leave-btn משתמש ב-class `.confirming` במקום inline style.
+
+**החלטות עיצוב לתיעוד:**
+- **Share buttons עם border+icon, לא רקע מלא צבוע.** brickato-style — סיבה: רקע ירוק של WhatsApp + כחול של Telegram שני פריטים בצבעים מרעישים ליד הכפתור הראשי. גישת border שקטה יותר ומאפשרת למשתמש לראות את ה-primary CTA (המשך ללוח) ללא הסחות.
+- **Code box: font size עלה מ-28 ל-36, letter-spacing מ-6 ל-8.** הקוד הוא הפריט החשוב במסך — צריך להיות impossible to miss.
+- **Join-code input כ-OTP** — בהשראת אפליקציות ש-4-digit code הוא UX חוזר. letter-spacing 14px מפריד בבירור בין הספרות. פונט monospace מבטיח יישור.
+- **Dashboard empty state** — מעודד חזרה להום (ולא ליצור ישירות), כי ה-home screen הוא נקודת הפיצול הטבעית.
+
+**מה **לא** נעשה בשלב 3 (נשאר לשלב 4–5):**
+- Calendar screen (grid, days, side-panel, admin) — שלב 4.
+- Toast visual overhaul מעמיק — כבר קיים מ-Stage 1 polish, אבל יש מקום לעבודה נוספת ב-Stage 5.
+- AI chatbot (fab + window) — שלב 5.
 
 ---
 

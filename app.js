@@ -282,11 +282,11 @@ function createEvent() {
   var dateTo = document.getElementById('newDateTo').value;
 
   if (!eventName || !organizerName) {
-    showToast('שם אירוע ושם מארגן הם שדות חובה.', 'error');
+    showToast('נא למלא שם אירוע ושם מארגן', 'error');
     return;
   }
   if (dateFrom && dateTo && dateFrom > dateTo) {
-    showToast('תאריך ההתחלה חייב להיות לפני תאריך הסיום.', 'error');
+    showToast('תאריך ההתחלה חייב להיות לפני תאריך הסיום', 'error');
     return;
   }
 
@@ -333,7 +333,7 @@ function createEvent() {
       state.isAdmin = true;
       state.dateFrom = dateFrom;
       state.dateTo = dateTo;
-      showToast('אירוע נוצר בהצלחה!', 'success');
+      showToast('האירוע נוצר בהצלחה', 'success');
       document.getElementById('codeResult').style.display = 'block';
       document.getElementById('eventCodeDisplay').textContent = eventCode;
       document.getElementById('sendEmailBtn').style.display = 'block';
@@ -360,7 +360,7 @@ function joinEvent() {
   var userName = document.getElementById('joinUserName').value.trim();
 
   if (!eventName || !eventCode || !userName) {
-    showToast('שם אירוע, קוד גישה ושמך הם שדות חובה.', 'error');
+    showToast('נא למלא את כל השדות', 'error');
     hideLoader();
     return;
   }
@@ -400,7 +400,7 @@ function joinEvent() {
           return dbSet('users/' + state.user.id + '/events/' + foundEventKey, { role: 'participant', eventName: eventName });
         }
       }).then(function() {
-        showToast('הצטרפת לאירוע בהצלחה!', 'success');
+        showToast('הצטרפת לאירוע בהצלחה', 'success');
         showScreen('screen-calendar');
         listenToEvent(foundEventKey);
       });
@@ -740,14 +740,16 @@ function logout() {
 // Share functions
 // Inline feedback — the clicked button itself flashes "✓ הועתק" for 1.5s.
 // Less intrusive than a toast because the user is already looking at the button.
+// Uses innerHTML (not textContent) so icon+label buttons restore correctly.
 function _flashCopyButton(btn, txt) {
   if (!btn) return;
-  var orig = btn.textContent;
+  var origHTML = btn._origHTML || btn.innerHTML;
+  btn._origHTML = origHTML;
   btn.textContent = txt || '✓ הועתק';
   btn.classList.add('copied');
   clearTimeout(btn._flashTimer);
   btn._flashTimer = setTimeout(function() {
-    btn.textContent = orig;
+    btn.innerHTML = origHTML;
     btn.classList.remove('copied');
   }, 1500);
 }

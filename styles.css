@@ -978,3 +978,201 @@ button.home-card:hover .home-card-chev{
   .home-header{margin-bottom:28px}
 }
 
+/* ═══════════════════════════════════════════════════════════
+   Stage 3 — Create / Join flows + code share + dashboard cards
+   ═══════════════════════════════════════════════════════════ */
+
+/* Uniform card header: tighter h2, desc with reduced bottom margin.
+   Used on form cards and dashboard. */
+.card-head{margin-bottom:24px}
+.card-head h2{
+  font-size:24px;font-weight:800;letter-spacing:-0.025em;color:var(--ink);
+  margin-bottom:6px;
+}
+.card-head .desc{
+  font-size:14px;color:var(--muted);line-height:1.55;margin:0;
+}
+
+/* Form card variant — keeps the .card base styling, adjusts spacing */
+.form-card{padding:32px 28px}
+
+/* Form field wrapper — consistent label/input/hint rhythm */
+.form-field{margin-bottom:16px}
+.form-field:last-child{margin-bottom:0}
+.form-field label{
+  display:block;margin:0 0 6px 0;
+  font-size:13px;font-weight:500;color:var(--text-2);letter-spacing:-.005em;
+}
+.label-aux{
+  color:var(--muted-2);font-weight:400;margin-inline-start:2px;
+}
+
+/* Two form fields side-by-side (e.g., start + end date) */
+.form-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;
+}
+.form-row .form-field{margin-bottom:0}
+@media(max-width:480px){
+  .form-row{grid-template-columns:1fr;gap:0}
+  .form-row .form-field{margin-bottom:16px}
+  .form-row .form-field:last-child{margin-bottom:0}
+}
+
+/* Override the legacy input padding for a slightly tighter, more modern feel */
+input[type=text],input[type=email],input[type=date]{
+  padding:11px 14px;
+  border-radius:10px;
+  transition:border-color .2s var(--ease),background .2s,box-shadow .2s;
+}
+
+/* Big, centered 4-digit OTP-style code input on the join screen */
+.join-code-input{
+  text-align:center;
+  font-family:'SF Mono','JetBrains Mono',Menlo,Monaco,Consolas,monospace;
+  font-size:28px;font-weight:700;letter-spacing:14px;
+  padding:16px 14px !important;
+  color:var(--accent);
+  caret-color:var(--accent);
+}
+.join-code-input::placeholder{
+  color:var(--muted-2);letter-spacing:14px;font-weight:400;
+}
+
+/* Primary CTA — full-width, tighter margin-top for form cards */
+.form-card .btn{margin-top:26px}
+
+/* ── CODE RESULT AREA ─────────────────────────────────────── */
+
+#codeResult{
+  margin-top:28px;padding-top:28px;
+  border-top:1px solid var(--border);
+  animation:fadeUp .4s var(--ease-out);
+}
+.code-result-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin-bottom:10px;gap:12px;flex-wrap:wrap;
+}
+.code-result-label{
+  font-size:12px;font-weight:600;color:var(--muted);
+  letter-spacing:.08em;text-transform:uppercase;
+}
+.code-result-sub{
+  font-size:13px;color:var(--text-2);
+}
+
+.code-box{
+  background:var(--code-box-bg);
+  border:1.5px solid var(--code-box-border);
+  border-radius:var(--radius-md);
+  padding:20px 22px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  box-shadow:var(--shadow-xs);
+  position:relative;overflow:hidden;
+}
+.code-val{
+  font-family:'SF Mono','JetBrains Mono',Menlo,Monaco,Consolas,monospace;
+  font-size:36px;font-weight:700;letter-spacing:8px;color:var(--accent);
+  line-height:1;
+}
+.copy-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:10px;
+  background:var(--card);border:1.5px solid var(--border);
+  font-size:13px;font-weight:500;color:var(--text);
+  cursor:pointer;transition:all .15s var(--ease);
+  font-family:inherit;
+}
+.copy-btn:hover{
+  border-color:var(--accent);color:var(--accent);
+  background:var(--accent-softer);
+}
+.copy-btn .icon{color:currentColor}
+.copy-btn.copied{
+  background:var(--accent) !important;color:#fff !important;
+  border-color:var(--accent) !important;
+}
+
+/* ── SHARE GRID (3 equal buttons, cleaner than the old share-row) ─── */
+.share-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;
+}
+@media(max-width:420px){
+  .share-grid{grid-template-columns:1fr}
+}
+.share-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 12px;border:1.5px solid var(--border);border-radius:10px;
+  background:var(--card);color:var(--text);
+  font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;
+  transition:all .15s var(--ease);min-width:0;
+}
+.share-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.share-btn:active{transform:translateY(0)}
+.share-btn .icon{flex-shrink:0;width:16px;height:16px}
+.share-btn.whatsapp .icon{color:#25D366}
+.share-btn.telegram .icon{color:#0088cc}
+.share-btn.copy-link .icon{color:var(--muted)}
+.share-btn:hover.whatsapp{border-color:#25D366;color:#1a8040}
+.share-btn:hover.telegram{border-color:#0088cc;color:#0066a0}
+.share-btn:hover.copy-link{border-color:var(--border-strong)}
+.share-btn.copied{background:var(--accent) !important;color:#fff !important;border-color:var(--accent) !important}
+.share-btn.copied .icon{color:#fff !important}
+
+/* ── CODE ACTIONS (below share grid) ─────────────────────── */
+.code-actions{
+  display:flex;flex-direction:column;gap:10px;margin-top:18px;
+}
+.code-actions .btn{margin-top:0}
+.code-actions #emailStatus{
+  font-size:12.5px;text-align:center;margin:0;color:var(--muted);
+}
+
+/* ── DASHBOARD event items ───────────────────────────────── */
+
+.dashboard-empty{
+  text-align:center;padding:40px 20px;color:var(--muted);
+}
+.dashboard-empty p{font-size:14px;margin-bottom:18px}
+.dashboard-empty .btn{width:auto;margin:0 auto;padding:10px 20px}
+
+#screen-dashboard .event-list{display:flex;flex-direction:column;gap:12px}
+
+#screen-dashboard .event-item{
+  background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-md);
+  padding:18px 20px;display:flex;flex-direction:column;gap:10px;
+  box-shadow:var(--shadow-xs);
+  transition:border-color .2s,box-shadow .25s,transform .2s;
+  animation:fadeUp .3s var(--ease-out);
+}
+#screen-dashboard .event-item:hover{
+  border-color:var(--accent);box-shadow:var(--shadow-sm);transform:translateY(-1px);
+}
+#screen-dashboard .event-item .event-item-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+#screen-dashboard .event-item h3{
+  font-size:16.5px;font-weight:700;color:var(--ink);letter-spacing:-0.015em;
+  margin:0;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.event-item-role{
+  font-size:11px;font-weight:600;letter-spacing:.04em;
+  padding:3px 10px;border-radius:999px;flex-shrink:0;
+}
+.event-item-role.role-admin{background:var(--accent-soft);color:var(--accent)}
+.event-item-role.role-participant{background:var(--pill-bg);color:var(--muted)}
+[data-theme="dark"] .event-item-role.role-admin{color:var(--accent-3)}
+
+#screen-dashboard .event-item .meta{
+  display:flex;gap:16px;font-size:12.5px;color:var(--muted);
+}
+#screen-dashboard .event-item .actions{
+  display:flex;gap:8px;margin-top:4px;
+}
+#screen-dashboard .event-item .actions .btn{
+  margin-top:0;padding:8px 14px;font-size:13px;width:auto;
+}
+#screen-dashboard .event-item .actions .leave-btn.confirming{
+  background:var(--danger) !important;color:#fff !important;border-color:var(--danger) !important;
+}
+
