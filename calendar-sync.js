@@ -1,8 +1,12 @@
-// calendar-sync.js
+// calendar-sync.js — sync availability into the user's Google Calendar.
+// All toasts go through i18n; event summary/description stay English for the
+// Calendar-side representation so it's readable regardless of app language.
 
 async function syncAvailabilityToCalendar(dateKey, note) {
+  var T = window.t || function(k,p){return k;};
+
   if (!window.state.user || window.state.isGuest) {
-    window.showToast('יש להתחבר עם Google כדי לסנכרן ליומן.', 'warning');
+    window.showToast(T('toast.syncGuestWarn'), 'warning');
     return;
   }
 
@@ -13,20 +17,20 @@ async function syncAvailabilityToCalendar(dateKey, note) {
     try {
       token = await window.requestCalendarScope();
     } catch (e) {
-      window.showToast('צריך להרשות גישה ל-Google Calendar כדי לסנכרן.', 'warning');
+      window.showToast(T('toast.calendarNoAuth'), 'warning');
       return;
     }
   }
 
   if (!token) {
-    window.showToast('לא קיבלנו הרשאת גישה ל-Google Calendar.', 'error');
+    window.showToast(T('toast.calendarNoPerm'), 'error');
     return;
   }
 
   var eventName = window.state.eventName;
   var calendarEvent = {
-    summary: 'זמינות: ' + eventName,
-    description: 'הערה: ' + (note || 'אין') + '\n\nנוצר באמצעות Quick Event Coordinator',
+    summary: 'Availability: ' + eventName,
+    description: 'Note: ' + (note || '—') + '\n\nCreated via Quick Event Coordinator',
     start: { date: dateKey },
     end: { date: dateKey },
     reminders: {
@@ -49,7 +53,7 @@ async function syncAvailabilityToCalendar(dateKey, note) {
     );
 
     if (response.ok) {
-      window.showToast('הזמינות סונכרנה ל-Google Calendar!', 'success');
+      window.showToast(T('toast.calendarSynced'), 'success');
     } else if (response.status === 401 && window.requestCalendarScope) {
       // Token expired, try refresh
       token = await window.requestCalendarScope();
@@ -65,17 +69,18 @@ async function syncAvailabilityToCalendar(dateKey, note) {
         }
       );
       if (retry.ok) {
-        window.showToast('הזמינות סונכרנה ל-Google Calendar!', 'success');
+        window.showToast(T('toast.calendarSynced'), 'success');
       } else {
-        window.showToast('שגיאה בסנכרון. נסה להתנתק ולהתחבר מחדש.', 'error');
+        window.showToast(T('toast.calendarRetryFail'), 'error');
       }
     } else {
       var errorData = await response.json();
-      window.showToast('שגיאה בסנכרון: ' + (errorData.error ? errorData.error.message : 'נסה שוב.'), 'error');
+      var msg = errorData.error ? errorData.error.message : '?';
+      window.showToast(T('toast.calendarSyncError', {msg: msg}), 'error');
     }
   } catch (error) {
     console.error('Network error syncing to Google Calendar:', error);
-    window.showToast('שגיאת רשת בסנכרון ל-Google Calendar.', 'error');
+    window.showToast(T('toast.calendarNetworkError'), 'error');
   }
 }
 

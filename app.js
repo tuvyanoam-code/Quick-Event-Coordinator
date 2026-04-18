@@ -45,7 +45,13 @@ function escapeHtml(s) {
 }
 
 function fmtLabel(date) {
-  return date.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+  var loc = (window.i18n && window.i18n.getLocale()) || 'he-IL';
+  return date.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+// Tiny helper so call sites stay terse even if window.t isn't ready for some reason.
+function tt(key, params) {
+  return (window.t ? window.t(key, params) : key);
 }
 
 // Toast Notification System
@@ -121,14 +127,21 @@ function showScreen(screenId) {
 // Personalized greeting on the home screen. Signed-in users see their first
 // name; guests get a neutral nudge. Keeps the home screen feeling human
 // instead of a generic dashboard.
+// Names that aren't really names — don't use them to build a personalized
+// greeting. Covers the guest placeholder in both languages and the fallback
+// that auth.js uses when Google returns no displayName.
+var PLACEHOLDER_NAMES = ['משתמש', 'אורח', 'User', 'Guest'];
+
 function updateHomeGreeting() {
   var el = document.getElementById('homeGreeting');
   if (!el) return;
-  if (state.user && !state.isGuest && state.user.name && state.user.name !== 'משתמש') {
-    var firstName = String(state.user.name).trim().split(/\s+/)[0];
-    el.textContent = 'שלום, ' + firstName + '. מה נתאם היום?';
+  var name = state.user && state.user.name;
+  var isReal = name && PLACEHOLDER_NAMES.indexOf(name) === -1 && !state.isGuest;
+  if (isReal) {
+    var firstName = String(name).trim().split(/\s+/)[0];
+    el.textContent = tt('home.greetingPersonal', {name: firstName});
   } else {
-    el.textContent = 'מה נתאם היום?';
+    el.textContent = tt('home.greetingDefault');
   }
 }
 
@@ -282,11 +295,11 @@ function createEvent() {
   var dateTo = document.getElementById('newDateTo').value;
 
   if (!eventName || !organizerName) {
-    showToast('נא למלא שם אירוע ושם מארגן', 'error');
+    showToast(tt('toast.createRequired'), 'error');
     return;
   }
   if (dateFrom && dateTo && dateFrom > dateTo) {
-    showToast('תאריך ההתחלה חייב להיות לפני תאריך הסיום', 'error');
+    showToast(tt('toast.dateOrder'), 'error');
     return;
   }
 
@@ -333,7 +346,7 @@ function createEvent() {
       state.isAdmin = true;
       state.dateFrom = dateFrom;
       state.dateTo = dateTo;
-      showToast('האירוע נוצר בהצלחה', 'success');
+      showToast(tt('toast.eventCreated'), 'success');
       document.getElementById('codeResult').style.display = 'block';
       document.getElementById('eventCodeDisplay').textContent = eventCode;
       document.getElementById('sendEmailBtn').style.display = 'block';
@@ -346,7 +359,7 @@ function createEvent() {
       listenToEvent(eventKey);
     })
     .catch(function(error) {
-      showToast('שגיאה ביצירת אירוע: ' + error.message, 'error');
+      showToast(tt('toast.createError', {msg: error.message}), 'error');
     })
     .finally(function() {
       hideLoader();
@@ -360,7 +373,7 @@ function joinEvent() {
   var userName = document.getElementById('joinUserName').value.trim();
 
   if (!eventName || !eventCode || !userName) {
-    showToast('נא למלא את כל השדות', 'error');
+    showToast(tt('toast.joinRequired'), 'error');
     hideLoader();
     return;
   }
@@ -400,15 +413,15 @@ function joinEvent() {
           return dbSet('users/' + state.user.id + '/events/' + foundEventKey, { role: 'participant', eventName: eventName });
         }
       }).then(function() {
-        showToast('הצטרפת לאירוע בהצלחה', 'success');
+        showToast(tt('toast.eventJoined'), 'success');
         showScreen('screen-calendar');
         listenToEvent(foundEventKey);
       });
     } else {
-      showToast('שם אירוע או קוד גישה שגויים.', 'error');
+      showToast(tt('toast.eventNotFound'), 'error');
     }
   }).catch(function(error) {
-    showToast('שגיאה בהצטרפות לאירוע: ' + error.message, 'error');
+    showToast(tt('toast.joinError', {msg: error.message}), 'error');
   }).finally(function() {
     hideLoader();
   });
@@ -422,7 +435,7 @@ function listenToEvent(eventKey) {
   var cb = function(snapshot) {
     var eventData = snapshot.val();
     if (!eventData) {
-      showToast('האירוע נמחק או אינו קיים.', 'error');
+      showToast(tt('toast.eventMissing'), 'error');
       logout();
       return;
     }
@@ -449,7 +462,7 @@ function listenToEvent(eventKey) {
   };
   var errCb = function(error) {
     console.error('Firebase listen error:', error);
-    showToast('שגיאה בטעינת נתוני אירוע: ' + error.message, 'error');
+    showToast(tt('toast.eventLoadError', {msg: error.message}), 'error');
   };
   eventRef.on('value', cb, errCb);
   state.unsubscribe = function() { eventRef.off('value', cb); };
@@ -460,7 +473,7 @@ function updateEventHeader() {
   document.getElementById('calEventCode').textContent = state.eventCode;
   document.getElementById('eventAdminBadge').style.display = state.isAdmin ? 'inline-block' : 'none';
   document.getElementById('adminPanel').style.display = state.isAdmin ? 'block' : 'none';
-  document.getElementById('logoutBtn').innerHTML = ICONS.chevronBack + '<span>חזרה למסך הבית</span>';
+  document.getElementById('logoutBtn').innerHTML = '<svg class="icon icon-sm icon-flip-rtl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg><span>' + tt('cal.backHome') + '</span>';
   // Prefer the name/color the user registered WITH this event over the auth-level name
   var eventUser = state.user && state.users[state.user.id];
   var displayName = (eventUser && eventUser.name) || (state.user && state.user.name) || '';
@@ -472,9 +485,10 @@ function updateEventHeader() {
   // Update date range info
   var dateRangeInfo = document.getElementById('dateRangeInfo');
   if (state.dateFrom || state.dateTo) {
-    var from = state.dateFrom ? new Date(state.dateFrom).toLocaleDateString('he-IL') : 'תאריך התחלה לא מוגדר';
-    var to = state.dateTo ? new Date(state.dateTo).toLocaleDateString('he-IL') : 'תאריך סיום לא מוגדר';
-    dateRangeInfo.textContent = 'טווח תאריכים: ' + from + ' - ' + to;
+    var loc = (window.i18n && window.i18n.getLocale()) || 'he-IL';
+    var from = state.dateFrom ? new Date(state.dateFrom).toLocaleDateString(loc) : tt('new.dateFrom');
+    var to = state.dateTo ? new Date(state.dateTo).toLocaleDateString(loc) : tt('new.dateTo');
+    dateRangeInfo.textContent = tt('cal.dateRange', {from: from, to: to});
     dateRangeInfo.style.display = 'block';
   } else {
     dateRangeInfo.style.display = 'none';
@@ -499,12 +513,16 @@ function isDayInRange(dateKey) {
   return true;
 }
 
-var DAY_NAMES = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+function getDayNames() {
+  var dict = (window.i18n && window.i18n.t('days.short'));
+  if (Array.isArray(dict)) return dict;
+  return ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+}
 
 function renderCal() {
   var grid = document.getElementById('calGrid');
   grid.innerHTML = '';
-  DAY_NAMES.forEach(function(n) {
+  getDayNames().forEach(function(n) {
     var d = document.createElement('div');
     d.className = 'dn';
     d.textContent = n;
@@ -517,7 +535,8 @@ function renderCal() {
   // so no adjustment is needed. Using any offset mis-aligns the Hebrew week.
   var start = first.getDay();
 
-  document.getElementById('monthLabel').textContent = first.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+  var monthLoc = (window.i18n && window.i18n.getLocale()) || 'he-IL';
+  document.getElementById('monthLabel').textContent = first.toLocaleDateString(monthLoc, { month: 'long', year: 'numeric' });
 
   for (var i = 0; i < start; i++) {
     var emptyDiv = document.createElement('div');
@@ -573,7 +592,7 @@ function renderCal() {
 function renderSel() {
   var addBtn = document.getElementById('addBtn');
   if (!state.selected) {
-    document.getElementById('selLabel').textContent = 'בחרו יום מהלוח';
+    document.getElementById('selLabel').textContent = tt('cal.selectDay');
     document.getElementById('avList').innerHTML = '';
     addBtn.disabled = true;
     return;
@@ -584,7 +603,7 @@ function renderSel() {
   var list = document.getElementById('avList');
   list.innerHTML = '';
   if (!entries.length) {
-    list.innerHTML = '<span>עדיין אין זמינות לתאריך זה</span>';
+    list.innerHTML = '<span>' + tt('cal.noAvail') + '</span>';
   } else {
     for (var i = 0; i < entries.length; i++) {
       (function(idx) {
@@ -604,8 +623,8 @@ function renderSel() {
           item.querySelector('.edit-entry').addEventListener('click', function() {
             state.editingEntry = idx;
             document.getElementById('noteInput').value = entry.note || '';
-            document.getElementById('addBtn').textContent = 'עדכון זמינות';
-            document.getElementById('addPanelTitle').textContent = 'עריכת זמינות';
+            document.getElementById('addBtn').textContent = tt('cal.updateBtn');
+            document.getElementById('addPanelTitle').textContent = tt('cal.editTitle');
             document.getElementById('cancelEditBtn').style.display = 'block';
             document.getElementById('noteInput').focus();
           });
@@ -627,8 +646,8 @@ function renderSel() {
 function cancelEdit() {
   state.editingEntry = null;
   document.getElementById('noteInput').value = '';
-  document.getElementById('addBtn').textContent = 'הוספת זמינות';
-  document.getElementById('addPanelTitle').textContent = 'הוספת זמינות';
+  document.getElementById('addBtn').textContent = tt('cal.addBtn');
+  document.getElementById('addPanelTitle').textContent = tt('cal.addTitle');
   document.getElementById('cancelEditBtn').style.display = 'none';
 }
 
@@ -638,7 +657,7 @@ function addAvailability() {
   var note = document.getElementById('noteInput').value.trim();
   var addBtn = document.getElementById('addBtn');
   addBtn.disabled = true;
-  addBtn.textContent = 'שומר…';
+  addBtn.textContent = tt('cal.savingBtn');
 
   dbGet('events/' + state.eventKey + '/availability/' + key).then(function(snap) {
     var entries = snap.exists() ? snap.val() : [];
@@ -652,35 +671,35 @@ function addAvailability() {
     var wasEdit = state.editingEntry !== null;
     cancelEdit();
     // Only toast on edit — a new entry shows up in the list, which is feedback enough.
-    if (wasEdit) showToast('הזמינות עודכנה', 'success');
+    if (wasEdit) showToast(tt('toast.availUpdated'), 'success');
     // Optionally sync to Google Calendar
     if (state.syncCalendar) {
       syncAvailabilityToCalendar(key, note);
     }
   }).catch(function(e) {
-    showToast('שגיאה בשמירת הזמינות: ' + e.message, 'error');
+    showToast(tt('toast.saveAvailError', {msg: e.message}), 'error');
   }).finally(function() {
     addBtn.disabled = false;
-    addBtn.textContent = 'הוספת זמינות';
+    addBtn.textContent = tt('cal.addBtn');
   });
 }
 
 function deleteEvent() {
   // Inline two-click confirmation — uses .confirming class + restores HTML on timeout.
-  showToast('לחצו שוב תוך 5 שניות לאישור', 'warning', 5000);
+  showToast(tt('toast.confirmDelete'), 'warning', 5000);
   var delBtn = document.getElementById('deleteEventBtn');
   var originalHTML = delBtn.innerHTML;
-  delBtn.textContent = 'לחצו שוב לאישור מחיקה';
+  delBtn.textContent = tt('admin.deleteConfirm');
   delBtn.classList.add('confirming');
   var confirmed = false;
   var handler = function() {
     confirmed = true;
     delBtn.removeEventListener('click', handler);
     dbRemove('events/' + state.eventKey).then(function() {
-      showToast('האירוע נמחק', 'success');
+      showToast(tt('toast.eventDeleted'), 'success');
       logout();
     }).catch(function(e) {
-      showToast('שגיאה במחיקת האירוע: ' + e.message, 'error');
+      showToast(tt('toast.deleteError', {msg: e.message}), 'error');
     });
   };
   delBtn.addEventListener('click', handler);
@@ -727,8 +746,8 @@ function logout() {
   var cb = document.getElementById('createBtn');
   cb.style.display = '';
   cb.disabled = false;
-  cb.textContent = 'יצירת אירוע';
-  document.getElementById('sendEmailBtn').innerHTML = ICONS.mail + '<span>שלח פרטים למייל שלי</span>';
+  cb.textContent = tt('new.createBtn');
+  document.getElementById('sendEmailBtn').innerHTML = ICONS.mail + '<span>' + tt('code.sendEmail') + '</span>';
   document.getElementById('sendEmailBtn').disabled = false;
   document.getElementById('openMailtoBtn').style.display = 'none';
   document.getElementById('emailStatus').style.display = 'none';
@@ -745,7 +764,7 @@ function _flashCopyButton(btn, txt) {
   if (!btn) return;
   var origHTML = btn._origHTML || btn.innerHTML;
   btn._origHTML = origHTML;
-  btn.textContent = txt || '✓ הועתק';
+  btn.textContent = txt || tt('code.copied');
   btn.classList.add('copied');
   clearTimeout(btn._flashTimer);
   btn._flashTimer = setTimeout(function() {
@@ -758,45 +777,42 @@ function copyCode() {
   var code = document.getElementById('eventCodeDisplay').textContent;
   var btn = document.getElementById('copyBtn');
   navigator.clipboard.writeText(code).then(function() {
-    _flashCopyButton(btn);
-  }).catch(function(err) {
-    showToast('שגיאה בהעתקת קוד: ' + err, 'error');
+    _flashCopyButton(btn, tt('code.copied'));
+  }).catch(function() {
+    showToast(tt('toast.copyError'), 'error');
+  });
+}
+
+function _inviteText() {
+  return tt('share.inviteTemplate', {
+    event: state.eventName,
+    code: state.eventCode,
+    url: window.location.href.split('?')[0]
   });
 }
 
 function shareWhatsApp() {
-  var eventName = state.eventName;
-  var eventCode = state.eventCode;
-  var url = window.location.href.split('?')[0];
-  var text = `היי! אני מזמין/ה אותך לאירוע ${eventName} ב-Quick Event Coordinator.\n\nקוד גישה: ${eventCode}\n\nלהצטרפות: ${url}`; 
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  window.open('https://wa.me/?text=' + encodeURIComponent(_inviteText()), '_blank');
 }
 
 function shareTelegram() {
-  var eventName = state.eventName;
-  var eventCode = state.eventCode;
   var url = window.location.href.split('?')[0];
-  var text = `היי! אני מזמין/ה אותך לאירוע ${eventName} ב-Quick Event Coordinator.\n\nקוד גישה: ${eventCode}\n\nלהצטרפות: ${url}`; 
-  window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+  window.open('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(_inviteText()), '_blank');
 }
 
 function shareCopyLink() {
-  var eventName = state.eventName;
-  var eventCode = state.eventCode;
-  var url = window.location.href.split('?')[0];
-  var text = `היי! אני מזמין/ה אותך לאירוע ${eventName} ב-Quick Event Coordinator.\n\nקוד גישה: ${eventCode}\n\nלהצטרפות: ${url}`;
   var btn = document.getElementById('shareCopyLink');
-  navigator.clipboard.writeText(text).then(function() {
+  navigator.clipboard.writeText(_inviteText()).then(function() {
     _flashCopyButton(btn);
-  }).catch(function(err) {
-    showToast('שגיאה בהעתקת פרטים: ' + err, 'error');
+  }).catch(function() {
+    showToast(tt('toast.copyError'), 'error');
   });
 }
 
 // Admin panel date range update
 document.getElementById('adminSetDatesBtn').addEventListener('click', function() {
   if (!state.isAdmin) {
-    showToast('רק מארגן האירוע יכול לקבוע תאריכים.', 'error');
+    showToast(tt('toast.adminOnly'), 'error');
     return;
   }
   var newDateFrom = document.getElementById('adminDateFrom').value;
@@ -809,9 +825,9 @@ document.getElementById('adminSetDatesBtn').addEventListener('click', function()
   else updates['/dateTo'] = null;
 
   dbUpdate('events/' + state.eventKey, updates).then(function() {
-    showToast('טווח התאריכים עודכן', 'success');
+    showToast(tt('toast.datesUpdated'), 'success');
   }).catch(function(e) {
-    showToast('שגיאה בעדכון טווח תאריכים: ' + e.message, 'error');
+    showToast(tt('toast.datesUpdateError', {msg: e.message}), 'error');
   });
 });
 
@@ -840,48 +856,50 @@ function sendEventEmail(toEmail, eventName, code, organizerName) {
       return { ok: false, fallback: true };
     });
   }
-  var subject = encodeURIComponent('הזמנה לתאם אירוע: ' + eventName);
-  var body = encodeURIComponent('שלום,\n\n' + organizerName + ' מזמין/ת אותך לתאם זמינות לאירוע: ' + eventName + '\n\nשם האירוע: ' + eventName + '\nקוד גישה: ' + code + '\n\nכדי להצטרף היכנס לאתר: ' + siteUrl + '\nלחץ על "הצטרף לאירוע קיים" והזן את שם האירוע והקוד.\n\nבברכה,\n' + organizerName);
+  var subject = encodeURIComponent(tt('email.subject', {event: eventName}));
+  var body = encodeURIComponent(tt('email.body', {
+    organizer: organizerName, event: eventName, code: code, url: siteUrl
+  }));
   return Promise.resolve({ ok: false, fallback: true, subject: subject, body: body });
 }
 
 function handleSendEmail() {
   var email = document.getElementById('newOrgEmail').value.trim();
   if (!email) {
-    showToast('נא להזין כתובת אימייל.', 'error');
+    showToast(tt('toast.emailRequired'), 'error');
     return;
   }
 
   var sendBtn = document.getElementById('sendEmailBtn');
   sendBtn.disabled = true;
-  sendBtn.textContent = 'שולח...';
+  sendBtn.textContent = tt('code.sendingEmail');
   document.getElementById('emailStatus').style.display = 'none';
 
   sendEventEmail(email, state.eventName, state.eventCode, document.getElementById('newOrgName').value.trim())
     .then(function(result) {
       if (result.ok) {
-        showToast('פרטי האירוע נשלחו למייל!', 'success');
-        document.getElementById('emailStatus').textContent = 'נשלח בהצלחה!';
+        showToast(tt('toast.emailSent'), 'success');
+        document.getElementById('emailStatus').textContent = tt('code.emailStatusSent');
         document.getElementById('emailStatus').style.color = 'var(--accent)';
         document.getElementById('emailStatus').style.display = 'block';
         sendBtn.style.display = 'none';
       } else if (result.fallback) {
-        showToast('שגיאה בשליחת מייל או שירות לא זמין. פותח חלון מייל ידני.', 'warning', 5000);
-        document.getElementById('emailStatus').textContent = 'שגיאה בשליחה. נסה ידנית.';
+        showToast(tt('toast.emailFallback'), 'warning', 5000);
+        document.getElementById('emailStatus').textContent = tt('code.emailStatusError');
         document.getElementById('emailStatus').style.color = 'var(--danger)';
         document.getElementById('emailStatus').style.display = 'block';
         document.getElementById('openMailtoBtn').style.display = 'block';
         handleMailto(result.subject, result.body);
       } else {
-        showToast('שגיאה בשליחת מייל.', 'error');
-        document.getElementById('emailStatus').textContent = 'שגיאה בשליחה.';
+        showToast(tt('toast.emailError'), 'error');
+        document.getElementById('emailStatus').textContent = tt('code.emailStatusError');
         document.getElementById('emailStatus').style.color = 'var(--danger)';
         document.getElementById('emailStatus').style.display = 'block';
       }
     })
     .catch(function(e) {
-      showToast('שגיאה בשליחת מייל: ' + e.message, 'error');
-      document.getElementById('emailStatus').textContent = 'שגיאה בשליחה.';
+      showToast(tt('toast.emailError') + ': ' + e.message, 'error');
+      document.getElementById('emailStatus').textContent = tt('code.emailStatusError');
       document.getElementById('emailStatus').style.color = 'var(--danger)';
       document.getElementById('emailStatus').style.display = 'block';
     })
@@ -994,23 +1012,23 @@ document.addEventListener('DOMContentLoaded', function() {
       e.target.checked = false;
       state.syncCalendar = false;
       localStorage.setItem('syncCalendar', 'false');
-      showToast('התחבר עם Google כדי לסנכרן ליומן.', 'warning');
+      showToast(tt('toast.syncGuestWarn'), 'warning');
       return;
     }
     state.syncCalendar = wantOn;
     localStorage.setItem('syncCalendar', state.syncCalendar);
     if (wantOn && window.requestCalendarScope && (!state.user || !state.user.accessToken)) {
       window.requestCalendarScope().then(function() {
-        showToast('סנכרון Google Calendar הופעל', 'success');
+        showToast(tt('toast.syncGranted'), 'success');
       }).catch(function() {
         e.target.checked = false;
         state.syncCalendar = false;
         localStorage.setItem('syncCalendar', 'false');
-        showToast('ההרשאה לא ניתנה — סנכרון כובה.', 'warning');
+        showToast(tt('toast.syncDenied'), 'warning');
       });
       return;
     }
-    showToast('סנכרון יומן Google ' + (wantOn ? 'הופעל' : 'כובה'), 'info');
+    showToast(wantOn ? tt('toast.syncOn') : tt('toast.syncOff'), 'info');
   });
   // Set initial state of toggle
   document.getElementById('syncCalendarToggle').checked = state.syncCalendar;
@@ -1049,3 +1067,32 @@ window.isDayInRange = isDayInRange;
 window.getRandomColor = getRandomColor;
 window.fmtKey = fmtKey;
 window.fmtLabel = fmtLabel;
+
+// React to language changes: re-render screens that contain localized
+// dynamic content (calendar grid, availability list, event header,
+// dashboard). Static HTML is re-applied by i18n.js itself.
+window.addEventListener('i18n:changed', function() {
+  // Home screen: refresh personalized greeting
+  updateHomeGreeting();
+  // Calendar screen: day labels, month label, selected-day label,
+  // availability list, event header, admin panel.
+  if (document.getElementById('screen-calendar').classList.contains('active')) {
+    renderCal();
+    renderSel();
+    updateEventHeader();
+  }
+  // Dashboard: re-render event cards (role labels, date range, CTAs)
+  if (document.getElementById('screen-dashboard').classList.contains('active') && state.user && !state.isGuest && window.loadUserDashboard) {
+    window.loadUserDashboard(state.user.id);
+  }
+  // Refresh calendar-screen back button (dynamic innerHTML)
+  var logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn && document.getElementById('screen-calendar').classList.contains('active')) {
+    logoutBtn.innerHTML = '<svg class="icon icon-sm icon-flip-rtl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg><span>' + tt('cal.backHome') + '</span>';
+  }
+  // Refresh sendEmailBtn (dynamic innerHTML) when visible
+  var sendEmailBtn = document.getElementById('sendEmailBtn');
+  if (sendEmailBtn && !sendEmailBtn.disabled && sendEmailBtn.offsetParent !== null) {
+    sendEmailBtn.innerHTML = ICONS.mail + '<span>' + tt('code.sendEmail') + '</span>';
+  }
+});

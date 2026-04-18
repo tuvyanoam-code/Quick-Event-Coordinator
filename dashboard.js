@@ -9,11 +9,11 @@ function loadUserDashboard(uid) {
       eventListDiv.innerHTML = ""; // Clear previous list
 
       if (!events) {
+        var tEmpty = (window.t ? window.t('dashboard.empty') : 'עדיין לא יצרתם או הצטרפתם לאירועים.');
+        var tBack = (window.t ? window.t('dashboard.backHome') : 'חזרה למסך הבית');
         eventListDiv.innerHTML =
-          `<div class="dashboard-empty">
-            <p>עדיין לא יצרתם או הצטרפתם לאירועים.</p>
-            <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-home')">חזרה למסך הבית</button>
-          </div>`;
+          '<div class="dashboard-empty"><p>' + tEmpty + '</p>' +
+          '<button class="btn btn-ghost btn-sm" onclick="showScreen(\'screen-home\')">' + tBack + '</button></div>';
         hideLoader();
         return;
       }
@@ -38,31 +38,40 @@ function loadUserDashboard(uid) {
           eventItem.className = "event-item";
 
           var participantCount = Object.keys(event.data.users || {}).length;
+          var T = window.t || function(k,p){return k;};
+          var loc = (window.i18n && window.i18n.getLocale()) || 'he-IL';
           var dateRangeText = "";
           if (event.data.dateFrom && event.data.dateTo) {
-            dateRangeText = `מ-${new Date(event.data.dateFrom).toLocaleDateString("he-IL")} עד-${new Date(event.data.dateTo).toLocaleDateString("he-IL")}`;
+            dateRangeText = T('dashboard.rangeFromTo', {
+              from: new Date(event.data.dateFrom).toLocaleDateString(loc),
+              to: new Date(event.data.dateTo).toLocaleDateString(loc)
+            });
           } else if (event.data.dateFrom) {
-            dateRangeText = `מ-${new Date(event.data.dateFrom).toLocaleDateString("he-IL")}`;
+            dateRangeText = T('dashboard.rangeFrom', {
+              from: new Date(event.data.dateFrom).toLocaleDateString(loc)
+            });
           } else if (event.data.dateTo) {
-            dateRangeText = `עד-${new Date(event.data.dateTo).toLocaleDateString("he-IL")}`;
+            dateRangeText = T('dashboard.rangeTo', {
+              to: new Date(event.data.dateTo).toLocaleDateString(loc)
+            });
           }
 
           var esc = window.escapeHtml || function(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
           var roleBadge = event.role === 'admin'
-            ? '<span class="event-item-role role-admin">מארגן</span>'
-            : '<span class="event-item-role role-participant">משתתף</span>';
+            ? '<span class="event-item-role role-admin">' + T('dashboard.roleAdmin') + '</span>'
+            : '<span class="event-item-role role-participant">' + T('dashboard.roleParticipant') + '</span>';
           eventItem.innerHTML =
             '<div class="event-item-head">' +
               '<h3></h3>' +
               roleBadge +
             '</div>' +
             '<div class="meta">' +
-              '<span>' + participantCount + ' משתתפים</span>' +
+              '<span>' + T('dashboard.participants', {n: participantCount}) + '</span>' +
               (dateRangeText ? '<span>' + esc(dateRangeText) + '</span>' : '') +
             '</div>' +
             '<div class="actions">' +
-              '<button class="btn btn-primary view-btn" type="button">פתיחת האירוע</button>' +
-              '<button class="btn btn-ghost leave-btn" type="button">עזיבה</button>' +
+              '<button class="btn btn-primary view-btn" type="button">' + T('dashboard.view') + '</button>' +
+              '<button class="btn btn-ghost leave-btn" type="button">' + T('dashboard.leave') + '</button>' +
             '</div>';
           // Safely set name as textContent so HTML in the name can't inject
           eventItem.querySelector('h3').textContent = event.data.name || '';
@@ -82,7 +91,8 @@ function loadUserDashboard(uid) {
     })
     .catch(function(error) {
       console.error("Error loading dashboard:", error);
-      window.showToast("שגיאה בטעינת לוח המחוונים: " + error.message, "error");
+      var T = window.t || function(k,p){return k;};
+      window.showToast(T('toast.dashboardLoadError', {msg: error.message}), "error");
       hideLoader();
     });
 }
@@ -103,12 +113,13 @@ function viewEvent(eventKey, eventName, eventCode, isAdmin) {
 var _leaveConfirmTimer = null;
 function leaveEvent(eventKey, eventName, targetBtn) {
   // Use double-click confirmation instead of native confirm()
+  var T = window.t || function(k,p){return k;};
   if (targetBtn && !targetBtn._confirming) {
     targetBtn._confirming = true;
     var originalText = targetBtn.textContent;
-    targetBtn.textContent = 'לחץ שוב לאישור';
+    targetBtn.textContent = T('dashboard.leaveConfirm');
     targetBtn.classList.add('confirming');
-    window.showToast('לחצו שוב תוך 5 שניות לאישור עזיבה', 'warning', 5000);
+    window.showToast(T('toast.confirmLeave'), 'warning', 5000);
     _leaveConfirmTimer = setTimeout(function() {
       targetBtn._confirming = false;
       targetBtn.textContent = originalText;
@@ -124,7 +135,7 @@ function leaveEvent(eventKey, eventName, targetBtn) {
       loadUserDashboard(window.state.user.id);
     })
     .catch(function(error) {
-      window.showToast('שגיאה בעזיבת אירוע: ' + error.message, 'error');
+      window.showToast(T('toast.leaveError', {msg: error.message}), 'error');
     })
     .finally(function() {
       hideLoader();

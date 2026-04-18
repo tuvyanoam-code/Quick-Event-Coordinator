@@ -27,8 +27,8 @@
 | 5 | Floating UI + QA (dark + mobile) | ✅ הושלם | [`7af7695`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/7af7695) |
 | — | Post-stage: login layout restore | ✅ הושלם | [`534e766`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/534e766) |
 | — | Post-stage: hero background photo | ✅ הושלם | [`9737bd5`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/9737bd5) |
-| i18n-1 | תשתית תרגום + מילון + markup | ✅ הושלם | _see below_ |
-| i18n-2 | מחרוזות דינמיות ב-JS + תאריכים + QA | ⏳ הבא | — |
+| i18n-1 | תשתית תרגום + מילון + markup | ✅ הושלם | [`bcb8421`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/bcb8421) |
+| i18n-2 | מחרוזות דינמיות ב-JS + תאריכים + QA | ✅ הושלם | _see below_ |
 
 ---
 
@@ -318,6 +318,43 @@
 - **Synchronous load** — `i18n.js` נטען לפני `app.js` בלי fetch/async. פירוש: כשהסקריפטים האחרים רצים, `window.t()` כבר קיים. אין race conditions.
 - **Fallback chain** — key → current lang → default lang (he) → raw key. אם חסר תרגום, האפליקציה לא נשברת.
 - **`data-i18n-attr` pattern** — attributes הם separate markers (לא אובייקט JSON) כי זה נקי יותר לקריאה ב-HTML ונוח ל-sed/grep. הסכמה: `data-i18n-{attr}="key"`.
+
+---
+
+## i18n Stage 2 — Dynamic JS strings, dates, chatbot ✅
+
+**מה נעשה:**
+- **app.js refactor** — כל `showToast('...')` עם string קבוע הוחלף ב-`showToast(tt('toast.key'))`. כל `textContent = '...'` / `innerHTML = '...'` שמכיל טקסט משתמש עבר ל-`tt(...)`. הטקסט של כפתור "הוספת זמינות" משתנה בין "הוספת" ל-"עדכון" בזמן עריכה (`tt('cal.addBtn')` / `tt('cal.updateBtn')`).
+- **`getDayNames()`** — פונקציה חדשה שמחזירה את שמות הימים מה-dictionary (`he.days.short` או `en.days.short`). renderCal משתמש בה במקום ב-array קבוע.
+- **תאריכים לפי locale** — `fmtLabel()`, dateRangeInfo, monthLabel, ו-dashboard event items משתמשים ב-`(window.i18n && window.i18n.getLocale()) || 'he-IL'` כארגומנט ל-`toLocaleDateString`. באנגלית מקבלים "Sun, Apr 19" במקום "ראשון, 19 באפריל".
+- **`updateHomeGreeting()`** — משתמש עכשיו ב-`tt('home.greetingPersonal', {name})` / `tt('home.greetingDefault')`. רשימת שמות placeholder (`'אורח','User','Guest','משתמש'`) כדי לדלג על greeting אישי כשאלו לא שמות אמיתיים.
+- **Share invite template** — `_inviteText()` helper חדש שמשתמש ב-`tt('share.inviteTemplate', {event, code, url})`. עכשיו WhatsApp/Telegram/copy-link חולקים טקסט אחד שמתורגם.
+- **Email template** — `sendEventEmail` הפאלבק ה-mailto משתמש ב-`tt('email.subject', ...)` + `tt('email.body', ...)` עם כל הפרמטרים.
+- **dashboard.js** — event item markup, role badges, CTAs, date range text, empty state, leave confirmation — כולם עברו ל-`T(...)`.
+- **auth.js** — כל ה-toasts של login/logout/calendar-permissions עברו ל-t. `headerSignOutBtn` fallback משתמש ב-`T('chrome.signOut')`.
+- **calendar-sync.js** נכתב מחדש ב-structure נקי יותר, כל ה-toasts ב-t(). האירועים ב-Google Calendar נשארים באנגלית (`Availability: ...`, `Note: ...`) כי הם נקראים ב-Calendar של המשתמש, לא ב-UI של האפליקציה.
+- **chatbot.js** — הודעת "מקליד" עברה ל-t. כל ה-AI command fallback replies (`ai.reply.*`), כל ה-toasts (botError, serverError) עברו ל-t. הודעות השגיאה של החיבור ל-Gemini בשני המקרים (HTTP error, no response, network error) פשוטו יותר והשתמשו ב-`toast.serverError` במקום שלושה טקסטים שונים.
+- **i18n:changed listener** — event listener חדש ב-app.js ש:
+  - מרענן את greeting של home,
+  - רנדר מחדש את calendar grid, availability list, event header אם על מסך הלוח,
+  - טוען מחדש את dashboard אם על dashboard,
+  - מעדכן innerHTML של logoutBtn (back button) כשמשתנה,
+  - מעדכן innerHTML של sendEmailBtn אם נראה.
+- **System prompt של Gemini נשאר עברית** — זה טקסט שמועבר ל-AI, לא למשתמש. ההוראה "ענה בשפה שבה המשתמש פונה אליך" כבר שם, אז ה-AI עונה בשפה הרלוונטית.
+- **Calendar event content באנגלית** — גוף האירוע שנוצר ב-Google Calendar ("Availability: ...", "Note: ...") כתוב באנגלית כי הוא מוצג ב-UI של Google Calendar של המשתמש, לא ב-UI שלנו. זה תואם את הקונבנציה של Google Calendar.
+
+**קבצים ששונו:**
+- `app.js` — ~30 edits, כולל `tt()` helper, i18n:changed listener, `getDayNames()` פונקציה, `_inviteText()` helper, `PLACEHOLDER_NAMES` מערך.
+- `auth.js` — ~5 edits: toasts של sign-in/out/calendar grant, fallback display name.
+- `dashboard.js` — event item markup refactor, empty state, leave confirm, dashboard load error.
+- `calendar-sync.js` — full rewrite with i18n-first toasts. Calendar event content stays English.
+- `chatbot.js` — ~15 edits: typing text, AI command fallback replies, toast errors, server error fallbacks.
+
+**החלטות עיצוב לתיעוד:**
+- **`tt()` ב-app.js** — shorthand שעוטף `window.t` (אם קיים) או מחזיר את ה-key כ-fallback. מעולה ל-call sites רבים שהיו הופכים ל-"window.t && window.t(...) || ...". שאר הקבצים משתמשים ב-`T` local variable באותה גישה.
+- **Re-render on language change** — בחרנו להאזין ל-`i18n:changed` ולרנדר מחדש רק מסכים פעילים. זה יעיל יותר מלרנדר הכל תמיד.
+- **Calendar events באנגלית** — שיקול UX: האירועים ב-Google Calendar של המשתמש חייבים להיות consistent אם המשתמש ישנה שפה בעתיד. באנגלית תמיד ברור מה הם.
+- **AI system prompt בעברית** — זהו טקסט "פנימי" שהמודל קורא; קל יותר לתחזק אותו כטקסט אחד עם הוראה "respond in user's language" מאשר לתרגם אותו לכל שפה.
 
 ---
 

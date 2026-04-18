@@ -102,6 +102,7 @@
     var action=command.action;
     var params=command.params||{};
     var message=command.message||'';
+    var T=window.t||function(k,p){return k};
 
     switch (action) {
       case 'createEvent':
@@ -113,9 +114,8 @@
           window.showScreen('screen-new');
           window.createEvent();
           if(message) addMsg(message, 'bot');
-          else addMsg('יוצר אירוע בשם \"'+params.eventName+'\"...', 'bot');
         } else {
-          addMsg(message||'חסרים פרטים ליצירת אירוע. נא לציין שם אירוע ושמך.', 'bot');
+          addMsg(message||T('ai.reply.createMissing'), 'bot');
         }
         break;
       case 'joinEvent':
@@ -126,9 +126,8 @@
           window.showScreen('screen-join');
           window.joinEvent();
           if(message) addMsg(message, 'bot');
-          else addMsg('מצטרף לאירוע \"'+params.eventName+'\"...', 'bot');
         } else {
-          addMsg(message||'חסרים פרטים להצטרפות. נא לציין שם אירוע, קוד גישה ושמך.', 'bot');
+          addMsg(message||T('ai.reply.joinMissing'), 'bot');
         }
         break;
       case 'addAvailability':
@@ -145,47 +144,45 @@
               window.renderSel();
               window.addAvailability();
               if(message) addMsg(message, 'bot');
-              else addMsg('מוסיף זמינות עבור '+params.date+'...', 'bot');
             } else {
-              addMsg('אתה לא בתוך אירוע. הצטרף לאירוע קודם.', 'bot');
+              addMsg(T('ai.reply.notInEvent'), 'bot');
             }
           } else {
-            addMsg('תאריך לא תקין. השתמש בפורמט YYYY-MM-DD.', 'bot');
+            addMsg(T('ai.reply.badDate'), 'bot');
           }
         } else {
-          addMsg(message||'חסר תאריך להוספת זמינות.', 'bot');
+          addMsg(message||T('ai.reply.availMissing'), 'bot');
         }
         break;
       case 'deleteAvailability':
         if (params.date && window.state.eventKey) {
           var key = params.date;
           window.dbGet('events/'+window.state.eventKey+'/availability/'+key).then(function(snap){
-            if(!snap.exists()){addMsg('אין זמינות שלך ליום '+key+'.','bot');return}
+            if(!snap.exists()){addMsg(T('ai.reply.noAvailForDate',{date:key}),'bot');return}
             var entries=snap.val();
             var filtered=entries.filter(function(en){return en.userId!==window.state.user.id});
-            if(filtered.length===entries.length){addMsg('אין זמינות שלך ליום '+key+'.','bot');return}
+            if(filtered.length===entries.length){addMsg(T('ai.reply.noAvailForDate',{date:key}),'bot');return}
             var p = filtered.length===0 ? window.dbRemove('events/'+window.state.eventKey+'/availability/'+key) : window.dbSet('events/'+window.state.eventKey+'/availability/'+key,filtered);
             p.then(function(){
               if(message) addMsg(message,'bot');
-              else addMsg('הזמינות שלך ליום '+key+' נמחקה.','bot');
-              window.showToast('הזמינות נמחקה','info');
+              else addMsg(T('ai.reply.availDeleted',{date:key}),'bot');
               // Update calendar view
               var dateObj=new Date(key+'T12:00:00');
               window.state.selected=dateObj;window.state.month=dateObj.getMonth();window.state.year=dateObj.getFullYear();
               window.renderCal();window.renderSel();
             });
-          }).catch(function(e){addMsg('שגיאה במחיקת הזמינות: '+e.message,'bot')});
+          }).catch(function(e){addMsg(T('toast.saveAvailError',{msg:e.message}),'bot')});
         } else if(!window.state.eventKey){
-          addMsg('אתה לא בתוך אירוע.', 'bot');
+          addMsg(T('ai.reply.notInEvent'), 'bot');
         } else {
-          addMsg(message||'חסר תאריך למחיקת זמינות.', 'bot');
+          addMsg(message||T('ai.reply.delMissing'), 'bot');
         }
         break;
       case 'setEventDates':
         if (!window.state.isAdmin) {
-          addMsg('רק מארגן האירוע יכול לקבוע תאריכים.', 'bot');
+          addMsg(T('ai.reply.adminOnly'), 'bot');
         } else if (!window.state.eventKey) {
-          addMsg('אתה לא בתוך אירוע.', 'bot');
+          addMsg(T('ai.reply.notInEvent'), 'bot');
         } else {
           var updates = {};
           if(params.dateFrom) updates['events/'+window.state.eventKey+'/dateFrom'] = params.dateFrom;
@@ -193,66 +190,62 @@
           if(Object.keys(updates).length>0){
             window._db.ref().update(updates).then(function() {
               if(message) addMsg(message, 'bot');
-              else addMsg('תאריכי האירוע עודכנו.', 'bot');
-              window.showToast('תאריכי האירוע עודכנו','success');
+              else addMsg(T('ai.reply.datesUpdated'), 'bot');
+              window.showToast(T('toast.datesUpdated'),'success');
             }).catch(function(e) {
-              addMsg('שגיאה בקביעת התאריכים: ' + e.message, 'bot');
+              addMsg(T('toast.datesUpdateError',{msg:e.message}), 'bot');
             });
           } else {
-            addMsg(message||'חסרים תאריכים.','bot');
+            addMsg(message||T('ai.reply.datesMissing'),'bot');
           }
         }
         break;
       case 'deleteEvent':
         if (!window.state.isAdmin) {
-          addMsg('רק מארגן האירוע יכול למחוק את האירוע.', 'bot');
+          addMsg(T('ai.reply.deleteOnly'), 'bot');
         } else if (!window.state.eventKey) {
-          addMsg('אתה לא בתוך אירוע.', 'bot');
+          addMsg(T('ai.reply.notInEvent'), 'bot');
         } else {
           window.dbRemove('events/'+window.state.eventKey).then(function() {
-            addMsg(message||'האירוע נמחק בהצלחה.', 'bot');
-            window.showToast('האירוע נמחק','success');
+            addMsg(message||T('ai.reply.eventDeleted'), 'bot');
+            window.showToast(T('toast.eventDeleted'),'success');
             setTimeout(function() { window.logout(); }, 1500);
           }).catch(function(e) {
-            addMsg('שגיאה במחיקת האירוע: ' + e.message, 'bot');
+            addMsg(T('toast.deleteError',{msg:e.message}), 'bot');
           });
         }
         break;
       case 'navigate':
         if (params.screen) {
-          var screenNames={'screen-home':'מסך הבית','screen-new':'יצירת אירוע','screen-join':'הצטרפות לאירוע','screen-calendar':'לוח הזמינות','screen-dashboard':'לוח מחוונים אישי'};
           window.showScreen(params.screen);
           if(message) addMsg(message, 'bot');
-          else addMsg('עברתי ל'+(screenNames[params.screen]||params.screen)+'.', 'bot');
-        } else {
-          addMsg(message||'לאן לנווט?', 'bot');
         }
         break;
       case 'logout':
         window.logout();
-        addMsg(message||'התנתקתי מהאירוע.', 'bot');
+        addMsg(message||T('ai.reply.loggedOut'), 'bot');
         break;
       case 'findBestDay':
-        if(!window.state.eventKey){addMsg('אתה לא בתוך אירוע.','bot');break}
+        if(!window.state.eventKey){addMsg(T('ai.reply.notInEvent'),'bot');break}
         var avail=window.state.availability||{};
         var dayCounts=[];
         Object.keys(avail).forEach(function(d){
           dayCounts.push({date:d,count:(avail[d]||[]).length});
         });
-        if(dayCounts.length===0){addMsg(message||'עדיין אין זמינויות שהוזנו.','bot');break}
+        if(dayCounts.length===0){addMsg(message||T('ai.reply.noAvailEntered'),'bot');break}
         dayCounts.sort(function(a,b){return b.count-a.count});
         var best=dayCounts[0];
         var names=(avail[best.date]||[]).map(function(en){
           var u=window.state.users[en.userId];return u?u.name:'?';
         });
-          addMsg(message||'היום הכי מתאים: '+best.date+' עם '+best.count+' אנשים פנויים ('+names.join(', ')+').','bot');
+        addMsg(message||T('ai.reply.bestDay',{date:best.date, count:best.count, names:names.join(', ')}),'bot');
         // Navigate to that day
         var dateObj=new Date(best.date+'T12:00:00');
         window.state.selected=dateObj;window.state.month=dateObj.getMonth();window.state.year=dateObj.getFullYear();
         window.showScreen('screen-calendar');window.renderCal();window.renderSel();
         break;
       default:
-        addMsg(message||'פקודה לא מוכרת.', 'bot');
+        addMsg(message||T('ai.reply.unknown'), 'bot');
     }
   }
 
@@ -264,7 +257,8 @@
     addMsg(text,'user');
     chatHistory.push({role:'user',parts:[{text:text}]});
 
-    var typing=addMsg('מקליד','bot');
+    var T=window.t||function(k,p){return k};
+    var typing=addMsg(T('ai.typing'),'bot');
     typing.classList.add('typing');
 
     var systemCtx='אתה עוזר AI ידידותי וחכם לאפליקציית תיאום זמינות קבוצתית בשם Quick Event Coordinator. ענה בשפה שבה המשתמש פונה אליך.\n\n';
@@ -298,11 +292,11 @@
         body:JSON.stringify(body)
       });
       if(!res.ok){
-        var errText = 'שגיאה מהשרת ('+res.status+'). נסה שוב.';
+        var errText = T('toast.serverError') + ' (' + res.status + ')';
         typing.textContent=errText;
         typing.classList.remove('typing');
         chatHistory.pop();
-        window.showToast('שגיאה בתקשורת עם הבוט','error');
+        window.showToast(T('toast.botError'),'error');
         sendBtn.disabled=false;input.focus();return;
       }
       var data=await res.json();
@@ -319,7 +313,7 @@
           var command = JSON.parse(jsonStr);
           if (command.action) {
             handleAICommand(command);
-            typing.textContent = command.message || ('פקודה בוצעה: ' + command.action);
+            typing.textContent = command.message || command.action;
             chatHistory.push({role:'model',parts:[{text:command.message||reply}]});
           } else {
             typing.textContent = reply;
@@ -331,19 +325,19 @@
           chatHistory.push({role:'model',parts:[{text:reply}]});
         }
       }else if(data.error){
-        typing.textContent='שגיאה: '+(typeof data.error==='string'?data.error:JSON.stringify(data.error));
+        typing.textContent=T('toast.serverError') + ': '+(typeof data.error==='string'?data.error:JSON.stringify(data.error));
         typing.classList.remove('typing');
         chatHistory.pop();
       }else{
-        typing.textContent='לא התקבלה תשובה. נסה שוב.';
+        typing.textContent=T('toast.serverError');
         typing.classList.remove('typing');
         chatHistory.pop();
       }
     }catch(e){
-      typing.textContent='שגיאה בחיבור לשרת. בדוק את החיבור לאינטרנט ונסה שוב.';
+      typing.textContent=T('toast.serverError');
       typing.classList.remove('typing');
       chatHistory.pop();
-      window.showToast('שגיאה בחיבור לשרת','error');
+      window.showToast(T('toast.serverError'),'error');
     }
     sendBtn.disabled=false;
     input.focus();

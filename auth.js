@@ -33,7 +33,8 @@ function signInWithGoogle(includeCalendar) {
         // User dismissed — no toast needed
         return;
       }
-      if (window.showToast) window.showToast('שגיאת התחברות עם Google: ' + error.message, 'error');
+      var T = window.t || function(k,p){return k;};
+      if (window.showToast) window.showToast(T('toast.signInError', {msg: error.message}), 'error');
     });
 }
 
@@ -51,10 +52,12 @@ function signOutUser() {
     if (signInBtn) signInBtn.style.display = '';
     if (menuWrap) menuWrap.style.display = 'none';
     closeUserMenu();
-    if (window.showToast) window.showToast('התנתקת בהצלחה', 'info');
+    var T = window.t || function(k,p){return k;};
+    if (window.showToast) window.showToast(T('toast.signOutSuccess'), 'info');
     if (window.showScreen) window.showScreen('screen-login');
   }).catch(function(error) {
-    if (window.showToast) window.showToast('שגיאת התנתקות: ' + error.message, 'error');
+    var T = window.t || function(k,p){return k;};
+    if (window.showToast) window.showToast(T('toast.signOutError', {msg: error.message}), 'error');
   }).finally(function() {
     hideLoader();
   });
@@ -95,12 +98,13 @@ function closeUserMenu() {
 function userMenuSignOut() { closeUserMenu(); signOutUser(); }
 function userMenuGrantCalendar() {
   closeUserMenu();
-  if (window.showToast) window.showToast('פותח את חלון ההרשאות של Google…', 'info');
+  var T = window.t || function(k,p){return k;};
+  if (window.showToast) window.showToast(T('toast.calendarOpening'), 'info');
   requestCalendarScope().then(function() {
-    if (window.showToast) window.showToast('הרשאות יומן Google הוענקו', 'success');
+    if (window.showToast) window.showToast(T('toast.calendarGranted'), 'success');
   }).catch(function(error) {
     if (error && (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request')) return;
-    if (window.showToast) window.showToast('לא ניתן היה לקבל הרשאות: ' + (error && error.message ? error.message : 'שגיאה לא ידועה'), 'error');
+    if (window.showToast) window.showToast(T('toast.calendarFailed', {msg: (error && error.message ? error.message : '?')}), 'error');
   });
 }
 // Close menu when clicking elsewhere or pressing Escape
@@ -134,7 +138,8 @@ auth.onAuthStateChanged(function(user) {
     if (signOutBtn) {
       var userIcon = (window.ICONS && window.ICONS.user) || '';
       var caret = (window.ICONS && window.ICONS.caret) || '';
-      var name = user.displayName || 'חשבון';
+      var T = window.t || function(k,p){return k;};
+      var name = user.displayName || T('chrome.signOut');
       // Show first name only to keep the chip compact
       var firstName = name.split(' ')[0];
       signOutBtn.innerHTML = userIcon + '<span>' + firstName + '</span>' + caret;
@@ -146,7 +151,10 @@ auth.onAuthStateChanged(function(user) {
       email: user.email,
       photoURL: user.photoURL,
       lastLogin: firebase.database.ServerValue.TIMESTAMP
-    }).catch(function(e) { console.warn('user profile update failed', e); });
+    }).catch(function(e) {
+      var T = window.t || function(k,p){return k;};
+      if (window.showToast) window.showToast(T('toast.profileUpdateError', {msg: e.message}), 'error');
+    });
 
     // Only navigate home if the user is currently staring at the legacy login screen
     var loginEl = document.getElementById('screen-login');
