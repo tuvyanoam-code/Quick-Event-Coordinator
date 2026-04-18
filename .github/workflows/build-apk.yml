@@ -41,6 +41,20 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
+      - name: Configure Bubblewrap to use pre-installed JDK / Android SDK
+        # GitHub's ubuntu-latest runner ships both. Writing a config file
+        # here tells bubblewrap to use them instead of prompting to
+        # download its own copies.
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat > ~/.bubblewrap/config.json << EOF
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_HOME"
+          }
+          EOF
+          cat ~/.bubblewrap/config.json
+
       - name: Prepare build directory
         run: |
           mkdir -p build
