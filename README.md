@@ -28,7 +28,7 @@
 | — | Post-stage: login layout restore | ✅ הושלם | [`534e766`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/534e766) |
 | — | Post-stage: hero background photo | ✅ הושלם | [`9737bd5`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/9737bd5) |
 | i18n-1 | תשתית תרגום + מילון + markup | ✅ הושלם | [`bcb8421`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/bcb8421) |
-| i18n-2 | מחרוזות דינמיות ב-JS + תאריכים + QA | ✅ הושלם | _see below_ |
+| i18n-2 | מחרוזות דינמיות ב-JS + תאריכים + QA | ✅ הושלם | [`e5d8c02`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/e5d8c02) |
 
 ---
 
