@@ -1808,4 +1808,56 @@ textarea:focus-visible,
 :root{color-scheme:light}
 [data-theme="dark"]{color-scheme:dark}
 
+/* ═══════════════════════════════════════════════════════════
+   i18n Stage 1 — language toggle + RTL/LTR icon flips
+   ═══════════════════════════════════════════════════════════ */
+
+/* Language toggle button — matches theme-toggle size/aesthetic */
+.lang-toggle{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--card);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:var(--shadow-sm);
+  transition:background .2s,border-color .2s,transform .2s,box-shadow .2s;
+  font-family:inherit;padding:0;
+}
+.lang-toggle:hover{
+  border-color:var(--border-strong);
+  background:var(--surface);
+  box-shadow:var(--shadow);
+  transform:translateY(-1px);
+}
+.lang-toggle:active{transform:translateY(0) scale(.96)}
+.lang-toggle .lang-label{
+  font-size:12px;font-weight:700;letter-spacing:.06em;
+  color:var(--text-2);
+  font-family:'Heebo','Assistant',system-ui,sans-serif;
+}
+
+/* Icons that should flip when direction changes (chevrons used as
+   "back" or "next" markers, whose semantic direction depends on RTL/LTR).
+   In RTL (Hebrew) the existing SVG is correct. In LTR (English) we mirror
+   it so "back" points left and "next" points right, as expected. */
+html[dir="ltr"] .icon-flip-rtl{transform:scaleX(-1)}
+
+/* In LTR mode, the AI send button's paper-plane already flips via an
+   existing rule — keep it consistent. */
+html[dir="ltr"] #ai-send .icon{transform:rotate(45deg)}
+html[dir="rtl"] #ai-send .icon{transform:scaleX(-1) rotate(45deg)}
+
+/* LTR-specific refinements — the layout is RTL-first, but these tweaks
+   keep English readable without a full re-layout. */
+html[dir="ltr"] .cal-event-title h2{text-align:left}
+html[dir="ltr"] .login-hero,
+html[dir="ltr"] .login-sub,
+html[dir="ltr"] .home-greeting{letter-spacing:-0.02em}
+html[dir="ltr"] .event-badge-code .badge-label{padding-inline-start:2px;padding-inline-end:0}
+
+/* English layout sometimes needs different home-card text alignment */
+html[dir="ltr"] button.home-card{text-align:left}
+
+/* Default browser direction on date inputs — let it match the theme */
+input[type="date"]{direction:inherit}
+html[dir="ltr"] input[type="date"]{direction:ltr}
+
 

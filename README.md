@@ -26,6 +26,9 @@
 | 4 | Calendar + Admin + Availability | ✅ הושלם | [`d3d369f`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/d3d369f) |
 | 5 | Floating UI + QA (dark + mobile) | ✅ הושלם | [`7af7695`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/7af7695) |
 | — | Post-stage: login layout restore | ✅ הושלם | [`534e766`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/534e766) |
+| — | Post-stage: hero background photo | ✅ הושלם | [`9737bd5`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/9737bd5) |
+| i18n-1 | תשתית תרגום + מילון + markup | ✅ הושלם | _see below_ |
+| i18n-2 | מחרוזות דינמיות ב-JS + תאריכים + QA | ⏳ הבא | — |
 
 ---
 
@@ -273,6 +276,48 @@
 - לא הוחלף מצב guest notice (ב-pill Stage 2), נשאר.
 - לא נוגעים לקוד Firebase — אין סיבה.
 - לא משנים placeholder של date inputs — הדפדפן מחליט על פי locale.
+
+---
+
+## i18n Stage 1 — Translation infrastructure + static HTML ✅
+
+**מה נעשה:**
+- **`i18n.js` חדש** — קובץ מרכזי עם שני dictionaries מלאים (עברית + אנגלית), ~150 מפתחות לכל שפה. כולל כל הטקסטים הסטטיים וגם פורמטים של טקסטים דינמיים (toast messages, AI replies, email templates).
+- **API קטן ופשוט** נחשף ל-`window.i18n`:
+  - `t(key, params)` — lookup בזמן ריצה, עם `{placeholder}` substitution (למשל `t('home.greetingPersonal', {name: 'עמית'})`).
+  - `setLanguage('he'|'en')` — מחליף שפה, מעדכן `dir`/`lang` על `<html>`, מפעיל `applyTranslations()`, ומפיץ event `i18n:changed`.
+  - `toggleLanguage()` — קיצור לכפתור.
+  - `getCurrentLang()`, `getLocale()`, `getDir()` — accessors.
+  - `applyTranslations(root?)` — סורק את ה-DOM (או subtree) ומחיל translations.
+- **`data-i18n` markers** הוספו לכל ה-HTML הסטטי:
+  - `data-i18n="key"` → `textContent` (או `innerHTML` אם יש `<br/>` ב-value).
+  - `data-i18n-placeholder="key"` → `placeholder` attribute.
+  - `data-i18n-title="key"` → `title`.
+  - `data-i18n-aria-label="key"` → `aria-label`.
+- **כפתור החלפת שפה** חדש ב-`.app-header` — `.lang-toggle` בגודל 38px (זהה ל-theme-toggle), מציג את הקוד של השפה שאליה עוברים ("EN" בעברית, "HE" באנגלית) — אותה קונבנציה של theme-toggle.
+- **היפוך חיצים אוטומטי** דרך class חדש `.icon-flip-rtl` + כלל CSS `html[dir="ltr"] .icon-flip-rtl { transform: scaleX(-1) }`. כל chevrons של "חזרה" + ניווט חודשי קיבלו את ה-class הזה. בעברית (RTL) הם כרגיל, באנגלית (LTR) מתהפכים. אותו עיקרון ל-`#ai-send` paper-plane.
+- **זיהוי שפה ראשונית** — localStorage קודם (preference קודמת), אחר כך `navigator.language` (אם מתחיל ב-`en` → EN, אחרת → HE).
+- **Persistence** ב-`localStorage['qec.lang']` — השפה שנבחרה נשמרת בין ביקורים.
+- **`dir` ו-`lang`** על `<html>` מתעדכנים מיד עם טעינת הסקריפט (לפני DOMContentLoaded), כך שה-first paint תקין.
+- **LTR layout refinements** — `.cal-event-title h2` מיושר שמאל ב-LTR, `button.home-card` text-align:left, letter-spacing קל על hero/subtitle ב-LTR.
+
+**מה לא נעשה בשלב הזה (שלב i18n-2):**
+- **מחרוזות דינמיות ב-JS** (toasts, `textContent = '...'` assignments, validation) — עדיין בעברית הארד-קודד. שלב i18n-2.
+- **פורמט תאריכים** — עדיין `toLocaleDateString('he-IL')` קבוע. יעבור ל-`Intl.DateTimeFormat(i18n.getLocale())`.
+- **שמות ימים בלוח** (`א׳ ב׳ ג׳`) — עדיין מ-array קבוע ב-app.js. יעבור לשימוש ב-`Intl.DateTimeFormat(..., {weekday:'short'})`.
+- **AI system prompt** לבוט — עדיין עברית-only. שלב i18n-2.
+- **Full QA pass** בשתי השפות — שלב i18n-2.
+
+**קבצים ששונו:**
+- `i18n.js` — קובץ חדש. ~380 שורות (רובן הן המילון עצמו).
+- `index.html` — הוספת `<script src="i18n.js">` לפני `app.js`; כפתור `.lang-toggle` ב-app-header; `data-i18n*` attributes על ~80 אלמנטים; `icon-flip-rtl` class על כל ה-chevrons. הסרת inline `title="..."` (הוחלפו ב-`data-i18n-title`).
+- `styles.css` — בלוק i18n Stage 1: `.lang-toggle` styles, `html[dir="ltr"] .icon-flip-rtl { transform: scaleX(-1) }`, LTR layout refinements.
+
+**החלטות עיצוב לתיעוד:**
+- **קובץ יחיד vs קובץ-פר-שפה** — בחרנו מילון יחיד כי זה פשוט יותר לערוך (edit diff אחד, לא שניים), וכי האפליקציה לא גדולה מספיק כדי שהגודל ישפיע על ביצועים.
+- **Synchronous load** — `i18n.js` נטען לפני `app.js` בלי fetch/async. פירוש: כשהסקריפטים האחרים רצים, `window.t()` כבר קיים. אין race conditions.
+- **Fallback chain** — key → current lang → default lang (he) → raw key. אם חסר תרגום, האפליקציה לא נשברת.
+- **`data-i18n-attr` pattern** — attributes הם separate markers (לא אובייקט JSON) כי זה נקי יותר לקריאה ב-HTML ונוח ל-sed/grep. הסכמה: `data-i18n-{attr}="key"`.
 
 ---
 
