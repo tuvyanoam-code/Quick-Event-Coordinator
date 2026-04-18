@@ -31,7 +31,7 @@
 | i18n-2 | מחרוזות דינמיות ב-JS + תאריכים + QA | ✅ הושלם | [`e5d8c02`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/e5d8c02) |
 | — | i18n fix: כפתור שפה גם במסך login | ✅ הושלם | [`b1a0729`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/b1a0729) |
 | — | Chevron direction flip in LTR | ✅ הושלם | [`51d3493`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/51d3493) |
-| pwa-1 | Installable PWA (Android + iOS) | ⏳ בתהליך | — |
+| pwa-1 | Installable PWA (Android + iOS) | ✅ הושלם | [`4de5ff8`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/4de5ff8) |
 
 ---
 
