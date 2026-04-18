@@ -38,13 +38,23 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+
+      - name: Install required Android SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" > /dev/null
+
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
       - name: Configure Bubblewrap to use pre-installed JDK / Android SDK
-        # GitHub's ubuntu-latest runner ships both. Writing a config file
-        # here tells bubblewrap to use them instead of prompting to
-        # download its own copies.
+        # Writing a config file here tells bubblewrap to use the JDK + SDK
+        # that the previous steps installed, instead of prompting to download
+        # its own copies.
         run: |
           mkdir -p ~/.bubblewrap
           cat > ~/.bubblewrap/config.json << EOF
@@ -53,7 +63,11 @@ jobs:
             "androidSdkPath": "$ANDROID_HOME"
           }
           EOF
+          echo "Config:"
           cat ~/.bubblewrap/config.json
+          echo "JAVA_HOME: $JAVA_HOME"
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          ls "$ANDROID_HOME" || echo "ANDROID_HOME not found"
 
       - name: Prepare build directory
         run: |
