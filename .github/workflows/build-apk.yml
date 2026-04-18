@@ -129,6 +129,14 @@ jobs:
           # regenerate the project so the new values take effect.
           cp ../twa-manifest.json ./twa-manifest.json
           bubblewrap update --skipVersionUpgrade
+          # Defensive patch: some bubblewrap template versions leave
+          # splashScreenFadeOutDuration empty if the manifest field is
+          # missing. Force a sane default so gradle can parse.
+          if [ -f app/build.gradle ]; then
+            sed -i 's/splashScreenFadeOutDuration: *,/splashScreenFadeOutDuration: 300,/' app/build.gradle
+            echo "--- Patched build.gradle line 44 area ---"
+            sed -n '40,48p' app/build.gradle
+          fi
 
       - name: Build signed APK
         working-directory: build
