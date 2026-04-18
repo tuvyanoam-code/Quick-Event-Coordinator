@@ -20,6 +20,7 @@
   "appVersion": "1.0.0",
   "appVersionCode": 1,
   "shortcuts": [],
+  "splashScreenFadeOutDurationMs": 300,
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://tuvyanoam-code.github.io/Quick-Event-Coordinator/manifest.json",
   "fallbackType": "customtabs",
