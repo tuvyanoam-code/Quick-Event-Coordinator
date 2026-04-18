@@ -1003,14 +1003,29 @@ button.home-card:hover{
 button.home-card:active{transform:translateY(0)}
 button.home-card:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 
+/* Chevron that slides in on hover. CSS variables let us flip both the
+   glyph direction AND the slide direction cleanly based on dir:
+   - RTL (Hebrew): chevron sits on the LEFT of the card, points LEFT (the
+     SVG's native orientation), and slides leftward on hover.
+   - LTR (English): chevron sits on the RIGHT, points RIGHT (scaleX(-1)
+     mirrors the same SVG), and slides rightward on hover. */
 .home-card-chev{
   width:18px;height:18px;flex-shrink:0;
   color:var(--muted-2);
-  opacity:0;transform:translateX(6px);
+  --chev-flip:1;
+  --chev-offset:6px;
+  opacity:0;
+  transform:translateX(var(--chev-offset)) scaleX(var(--chev-flip));
   transition:opacity .2s var(--ease),transform .25s var(--ease),color .15s;
 }
+html[dir="ltr"] .home-card-chev{
+  --chev-flip:-1;
+  --chev-offset:-6px;
+}
 button.home-card:hover .home-card-chev{
-  opacity:1;transform:translateX(0);color:var(--accent);
+  opacity:1;
+  transform:translateX(0) scaleX(var(--chev-flip));
+  color:var(--accent);
 }
 
 /* Ensure the text block fills remaining width so the chevron sits at the edge */
