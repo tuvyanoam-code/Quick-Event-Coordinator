@@ -1,3 +1,13 @@
+// Register the PWA service worker (enables "Install app" on Android Chrome +
+// iOS Safari Add-to-Home-Screen). No-op in browsers without SW support.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('service-worker.js').catch(function(err) {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
+
 var firebaseConfig = {
     apiKey: "AIzaSyCi0_5qjlb-YgX7tCjygQHV8tbhyN4Bado",
     authDomain: "quick-event-coordinator.firebaseapp.com",

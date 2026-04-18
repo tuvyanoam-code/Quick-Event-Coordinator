@@ -29,6 +29,9 @@
 | — | Post-stage: hero background photo | ✅ הושלם | [`9737bd5`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/9737bd5) |
 | i18n-1 | תשתית תרגום + מילון + markup | ✅ הושלם | [`bcb8421`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/bcb8421) |
 | i18n-2 | מחרוזות דינמיות ב-JS + תאריכים + QA | ✅ הושלם | [`e5d8c02`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/e5d8c02) |
+| — | i18n fix: כפתור שפה גם במסך login | ✅ הושלם | [`b1a0729`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/b1a0729) |
+| — | Chevron direction flip in LTR | ✅ הושלם | [`51d3493`](https://github.com/tuvyanoam-code/Quick-Event-Coordinator/commit/51d3493) |
+| pwa-1 | Installable PWA (Android + iOS) | ⏳ בתהליך | — |
 
 ---
 
@@ -318,6 +321,34 @@
 - **Synchronous load** — `i18n.js` נטען לפני `app.js` בלי fetch/async. פירוש: כשהסקריפטים האחרים רצים, `window.t()` כבר קיים. אין race conditions.
 - **Fallback chain** — key → current lang → default lang (he) → raw key. אם חסר תרגום, האפליקציה לא נשברת.
 - **`data-i18n-attr` pattern** — attributes הם separate markers (לא אובייקט JSON) כי זה נקי יותר לקריאה ב-HTML ונוח ל-sed/grep. הסכמה: `data-i18n-{attr}="key"`.
+
+---
+
+## PWA Stage 1 — Installable Progressive Web App ✅
+
+**מה נעשה:**
+- **`manifest.json` חדש** בשורש הריפו: שם מלא + קצר, תיאור, icons (192+512 רגילים + maskable לאנדרואיד שמעגל אייקונים), `theme_color` ירוק עמוק, `background_color` קרם חם, display `standalone` (fullscreen בלי שורת כתובת), `orientation: portrait-primary`.
+- **`service-worker.js`** מינימלי — רק עם fetch handler network-only (בלי caching). זה דרוש כדי ש-Chrome/Edge יציגו את כפתור "Install app"; מאחר שהמשתמש ביקש "online בלבד" לעת עתה, אין offline fallback. קל לשדרג בהמשך בלי לשנות manifest או registration.
+- **אייקונים** — נוצרו מ-`assets/login-bg.jpg` על ידי `sips`: center crop ל-1333×1333, ואז resize ל-512 ול-192. התמונה מראה את לחיצת הידיים — איקונית ומתאימה קונספטואלית.
+- **meta tags** ב-`<head>`: `<link rel="manifest">`, `theme-color`, `apple-mobile-web-app-capable` (iOS Safari fullscreen), `apple-mobile-web-app-status-bar-style: black-translucent`, `apple-touch-icon` (iOS לוקח את זה במקום manifest icons), ואייקוני favicon PNG ב-192/512.
+- **רישום service worker** ב-app.js בתחילת הקובץ. עטוף ב-`if ('serviceWorker' in navigator)` — דפדפנים בלי תמיכה (Safari ישן מאוד) פשוט לא נרשמים, האתר עובד כרגיל.
+
+**איך מקבלים את האפליקציה:**
+- **Android (Chrome)**: פותחים את האתר → תפריט ⋮ → "Install app" (או popup אוטומטי אחרי ביקור שני). האייקון מופיע במסך הבית, ייפתח ב-fullscreen.
+- **iOS (Safari)**: Share button → "Add to Home Screen". עובד גם ב-iOS אבל עם מגבלות נטיב (notifications רק מ-iOS 16.4).
+- **Desktop (Chrome/Edge)**: אייקון "התקן" בשורת הכתובת, או Menu → "Install Quick Event Coordinator".
+
+**קבצים שנוספו/שונו:**
+- `manifest.json` (חדש)
+- `service-worker.js` (חדש)
+- `assets/icon-192.png`, `assets/icon-512.png` (חדשים)
+- `index.html` — הוספת meta tags ו-link ל-manifest ב-`<head>`
+- `app.js` — רישום service worker בתחילת הקובץ
+
+**החלטות עיצוב לתיעוד:**
+- **Online-only SW** — בלי cache כרגע. זה pragmatic: אם מישהו שואל "האם זה עובד offline?" התשובה "לא, עדיין" נקייה יותר מ"לפעמים, תלוי". שדרוג עתידי הוא פרוגרסיבי בלי שבירה.
+- **אייקון photo-based** — השתמשנו בתמונה הקיימת של ה-handshake. אם נרצה אייקון "brand-mark" עם לוגו QEC על רקע gradient, זה commit נוסף עם שינוי של 2 קבצי PNG בלבד.
+- **`scope: "./"`** — ה-PWA חל על כל הריפו. טוב ל-GitHub Pages שעל sub-path (`/Quick-Event-Coordinator/`).
 
 ---
 

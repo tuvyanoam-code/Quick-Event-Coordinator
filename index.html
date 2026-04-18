@@ -9,6 +9,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Assistant:wght@400;500;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="styles.css"/>
 
+<!-- Progressive Web App: installable on Android (Chrome menu → Install app)
+     and on iOS (Safari → Share → Add to Home Screen). Keeps the site
+     working normally in any browser; these tags are purely additive. -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0f4c2e"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Event Coord"/>
+<link rel="apple-touch-icon" href="assets/icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png"/>
+
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
