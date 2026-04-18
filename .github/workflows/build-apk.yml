@@ -113,14 +113,21 @@ jobs:
             fs.writeFileSync('twa-manifest.json', JSON.stringify(m, null, 2));
           "
 
-      - name: Build TWA project
+      - name: Scaffold TWA project via init
         working-directory: build
         env:
-          # Pre-set bubblewrap's JDK/SDK to the runner's installed locations
           JAVA_HOME: ${{ env.JAVA_HOME }}
         run: |
-          # bubblewrap update scaffolds the Android project from twa-manifest.json
-          # without prompting (requires an existing manifest).
+          # `init` is interactive but accepts defaults on Enter for every
+          # prompt. We pipe ~40 blank lines so every question is answered
+          # with its default. The web manifest URL supplies the bulk of
+          # the fields; our own twa-manifest.json overrides afterwards.
+          yes "" | head -n 40 | bubblewrap init \
+            --manifest=https://tuvyanoam-code.github.io/Quick-Event-Coordinator/manifest.json \
+            --directory=. || true
+          # Replace the auto-generated manifest with our curated one, then
+          # regenerate the project so the new values take effect.
+          cp ../twa-manifest.json ./twa-manifest.json
           bubblewrap update --skipVersionUpgrade
 
       - name: Build signed APK
