@@ -110,12 +110,18 @@ function showScreen(screenId) {
   document.getElementById(screenId).classList.add('active');
   // Hide AI window when changing screens
   document.getElementById('ai-window').classList.remove('open');
-  // The login gate has its own sign-in button; hide the floating top header
-  // there, and also hide the floating AI assistant so it doesn't distract.
+  // On the login gate: keep the header visible so language + theme toggles
+  // remain reachable (a non-Hebrew speaker needs to see the EN button), but
+  // mark it with a class that CSS uses to hide sign-in / account chips —
+  // those controls are redundant with the buttons on the card itself.
+  // The AI assistant stays hidden at the gate so it doesn't distract.
   var appHeader = document.querySelector('.app-header');
   var aiFab = document.getElementById('ai-fab');
   var onGate = (screenId === 'screen-login');
-  if (appHeader) appHeader.style.display = onGate ? 'none' : 'flex';
+  if (appHeader) {
+    appHeader.style.display = 'flex';
+    appHeader.classList.toggle('app-header-gate', onGate);
+  }
   if (aiFab) aiFab.style.display = onGate ? 'none' : 'flex';
   // Pre-fill the create-event form with the signed-in user's name + email
   // as editable defaults the first time they arrive at the screen.
@@ -955,11 +961,15 @@ document.addEventListener('DOMContentLoaded', function() {
   // the login gate; the user must explicitly sign in or pick "continue as
   // guest" before they can reach the home / create / join flows.
   setupGuestUser();
-  // On the login gate, hide the top floating controls so the gate is the
-  // only interactive element on screen.
+  // At startup the login gate is active. Keep the app-header visible so the
+  // language + theme toggles are reachable, but mark it with app-header-gate
+  // so CSS hides the sign-in / user menu. AI assistant is hidden at the gate.
   var appHeader = document.querySelector('.app-header');
   var aiFab = document.getElementById('ai-fab');
-  if (appHeader) appHeader.style.display = 'none';
+  if (appHeader) {
+    appHeader.style.display = 'flex';
+    appHeader.classList.add('app-header-gate');
+  }
   if (aiFab) aiFab.style.display = 'none';
 
   document.getElementById('goNew').addEventListener('click', function() { showScreen('screen-new'); });

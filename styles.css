@@ -1812,6 +1812,15 @@ textarea:focus-visible,
    i18n Stage 1 — language toggle + RTL/LTR icon flips
    ═══════════════════════════════════════════════════════════ */
 
+/* On the login gate, only language + theme toggles are shown in the header —
+   sign-in / account-chip are hidden because the card has its own primary
+   Google sign-in button. This ensures a non-Hebrew speaker arriving on the
+   page can still switch language and theme before authenticating. */
+.app-header.app-header-gate #headerSignInBtn,
+.app-header.app-header-gate .user-menu-wrap{
+  display:none !important;
+}
+
 /* Language toggle button — matches theme-toggle size/aesthetic */
 .lang-toggle{
   width:38px;height:38px;border-radius:50%;
