@@ -138,22 +138,64 @@ jobs:
             sed -n '40,48p' app/build.gradle
           fi
 
-      - name: Build signed APK
+      - name: Build unsigned APK via Gradle
         working-directory: build
         run: |
-          # Non-interactive build. Passwords supplied via env to avoid prompts.
+          # Run bubblewrap's build (also tries to sign, but that step has
+          # failed silently in past runs — we re-sign explicitly below
+          # with apksigner to guarantee a valid signature).
           BUBBLEWRAP_JDK_PATH=$JAVA_HOME \
           BUBBLEWRAP_KEYSTORE_PASSWORD=android \
           BUBBLEWRAP_KEY_PASSWORD=android \
-          bubblewrap build \
-            --skipPwaValidation
+          bubblewrap build --skipPwaValidation || true
+          # Always run gradle assembleRelease directly so we have an
+          # APK to sign even if bubblewrap's wrapper failed.
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Sign APK explicitly with apksigner
+        working-directory: build
+        run: |
+          # Locate a signed APK first (bubblewrap may have produced one);
+          # fall back to unsigned if not. Then always run apksigner to
+          # ensure the final file is signed with our keystore under
+          # APK Signing Scheme v2 + v3 (required on Android 11+).
+          APKSIGNER=$(find "$ANDROID_HOME" -name "apksigner" -type f 2>/dev/null | sort | tail -1)
+          ZIPALIGN=$(find "$ANDROID_HOME" -name "zipalign" -type f 2>/dev/null | sort | tail -1)
+          echo "apksigner: $APKSIGNER"
+          echo "zipalign:  $ZIPALIGN"
+
+          # Prefer explicitly-unsigned output from gradle; else any apk under outputs
+          UNSIGNED=$(find . -path "*/build/outputs/apk/release/*.apk" 2>/dev/null | head -1)
+          echo "Unsigned candidate: $UNSIGNED"
+          [ -z "$UNSIGNED" ] && { echo "No APK produced!"; exit 1; }
+
+          # zipalign then sign
+          "$ZIPALIGN" -p -f 4 "$UNSIGNED" app-release-aligned.apk
+          "$APKSIGNER" sign \
+            --ks android.keystore \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --ks-key-alias android \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out app-release-signed.apk \
+            app-release-aligned.apk
+
+          # Verify the signature is actually valid before shipping it
+          "$APKSIGNER" verify -v app-release-signed.apk
 
       - name: Locate APK
         id: find-apk
         working-directory: build
         run: |
-          APK=$(find . -name "app-release-signed.apk" -o -name "*.apk" 2>/dev/null | head -1)
-          echo "Found APK: $APK"
+          # At this point app-release-signed.apk is guaranteed to exist
+          # and be v1+v2+v3 signed thanks to the previous step.
+          APK="app-release-signed.apk"
+          if [ ! -f "$APK" ]; then
+            echo "Signed APK missing!"
+            exit 1
+          fi
           cp "$APK" "quick-event-coordinator-${VERSION_NAME}.apk"
           echo "apk_name=quick-event-coordinator-${VERSION_NAME}.apk" >> $GITHUB_OUTPUT
 
