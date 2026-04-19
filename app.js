@@ -466,9 +466,16 @@ function listenToEvent(eventKey) {
     // Check if current user is admin
     state.isAdmin = (eventData.organizer && eventData.organizer.id === state.user.id);
 
-    // Update current user's name in event if it changed
-    if (state.user && state.user.id && state.users[state.user.id] && state.users[state.user.id].name !== state.user.name) {
-      dbUpdate('events/' + eventKey + '/users/' + state.user.id, { name: state.user.name });
+    // Per-event identity is SACRED. Each event stores its own {name,color}
+    // for this user (set at create/join time). Pull those values into
+    // state.user so the UI (user pill, greetings, availability rows)
+    // reflects the name registered FOR THIS EVENT — and so we never
+    // overwrite an event's user record with a name set in a different
+    // event from the same browser session.
+    if (state.user && state.user.id && state.users[state.user.id]) {
+      var reg = state.users[state.user.id];
+      if (reg.name) state.user.name = reg.name;
+      if (reg.color) state.user.color = reg.color;
     }
 
     renderCal();
