@@ -1,18 +1,20 @@
 name: Build Android APK
 
-# Builds a signed APK from the existing PWA using Bubblewrap.
-# Runs in GitHub's cloud — no local tooling required.
-# Trigger manually from the Actions tab ("Run workflow") or by pushing a
-# tag matching v*. The resulting APK is attached to a GitHub Release and
-# also uploaded as a workflow artifact for quick access.
+# Builds a true WebView-based APK using Capacitor (Ionic's native shell).
+# The resulting APK uses Android System WebView (a system component present
+# on every Android 5+) to render the web app — it does NOT depend on Chrome
+# or any browser being installed.
+#
+# The web content loads from https://tuvyanoam-code.github.io/Quick-Event-Coordinator/
+# at runtime, so the APK stays small and always shows the latest version.
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version name (e.g. 1.0.0)'
+        description: 'Version name (e.g. 1.0.2)'
         required: false
-        default: '1.0.0'
+        default: '1.0.2'
   push:
     tags:
       - 'v*'
@@ -43,45 +45,84 @@ jobs:
         with:
           cmdline-tools-version: 11076708
 
-      - name: Install required Android SDK packages
+      - name: Accept Android SDK licenses + install packages
         run: |
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" > /dev/null
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" > /dev/null
 
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
-
-      - name: Configure Bubblewrap to use pre-installed JDK / Android SDK
-        # Writing a config file here tells bubblewrap to use the JDK + SDK
-        # that the previous steps installed, instead of prompting to download
-        # its own copies.
+      - name: Resolve version name
         run: |
-          mkdir -p ~/.bubblewrap
-          cat > ~/.bubblewrap/config.json << EOF
-          {
-            "jdkPath": "$JAVA_HOME",
-            "androidSdkPath": "$ANDROID_HOME"
-          }
+          VERSION_NAME="${{ github.event.inputs.version || github.ref_name }}"
+          VERSION_NAME="${VERSION_NAME#v}"
+          VERSION_NAME="${VERSION_NAME:-1.0.2}"
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "VERSION_CODE=${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Install Capacitor
+        run: |
+          # npm ci would need a lockfile; a plain install is fine here.
+          npm install
+
+      - name: Prepare web-assets placeholder
+        # Capacitor requires `webDir` to exist. Content is loaded at runtime
+        # from server.url in capacitor.config.json, so this folder only needs
+        # a minimal placeholder page.
+        run: |
+          mkdir -p www
+          cat > www/index.html << 'EOF'
+          <!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=https://tuvyanoam-code.github.io/Quick-Event-Coordinator/"></head><body>Loading…</body></html>
           EOF
-          echo "Config:"
-          cat ~/.bubblewrap/config.json
-          echo "JAVA_HOME: $JAVA_HOME"
-          echo "ANDROID_HOME: $ANDROID_HOME"
-          ls "$ANDROID_HOME" || echo "ANDROID_HOME not found"
 
-      - name: Prepare build directory
+      - name: Add Android platform
         run: |
-          mkdir -p build
-          cp twa-manifest.json build/
+          npx cap add android
+          npx cap sync android
 
-      - name: Generate keystore (debug signing)
-        working-directory: build
+      - name: Patch Android app version + name
         run: |
-          # Generate a fresh keystore each run. This means the app can be
-          # installed directly from the APK file (sideload), but updates
-          # won't be recognized as from the same origin by the OS. For a
-          # real production workflow we'd store a persistent keystore in
-          # GitHub Secrets; for sideload-only installs this is sufficient.
+          # Replace versionCode / versionName in android/app/build.gradle
+          sed -i "s/versionCode 1/versionCode ${VERSION_CODE}/" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"${VERSION_NAME}\"/" android/app/build.gradle
+          # Replace the app launcher name (strings.xml)
+          sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">Event Coord</string>|" android/app/src/main/res/values/strings.xml || true
+          echo "--- build.gradle version section ---"
+          grep -E "versionCode|versionName" android/app/build.gradle
+
+      - name: Copy icons into Android mipmap folders
+        run: |
+          # Capacitor ships default launcher icons; overwrite with ours
+          # (192×192 → xhdpi, 512×512 downsized in place by the build).
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            cp assets/icon-192.png "android/app/src/main/res/mipmap-$d/ic_launcher.png" || true
+            cp assets/icon-192.png "android/app/src/main/res/mipmap-$d/ic_launcher_round.png" || true
+          done
+          # Replace the foreground adaptive-icon with a clean crop of our photo
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            cp assets/icon-192.png "android/app/src/main/res/mipmap-$d/ic_launcher_foreground.png" 2>/dev/null || true
+          done
+
+      - name: Build release APK via Gradle
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Sign APK with apksigner (v1 + v2 + v3)
+        run: |
+          # Locate tools
+          APKSIGNER=$(find "$ANDROID_HOME" -name "apksigner" -type f 2>/dev/null | sort | tail -1)
+          ZIPALIGN=$(find "$ANDROID_HOME" -name "zipalign" -type f 2>/dev/null | sort | tail -1)
+          echo "apksigner: $APKSIGNER"
+          echo "zipalign:  $ZIPALIGN"
+
+          # Locate Gradle's unsigned release APK
+          UNSIGNED=$(find android -path "*/build/outputs/apk/release/*.apk" | head -1)
+          echo "Unsigned APK: $UNSIGNED"
+          [ -z "$UNSIGNED" ] && { echo "No APK produced!"; exit 1; }
+
+          # Generate a keystore fresh for this run (debug cert — fine for
+          # sideload installs, prevents Play Store upload but that's a
+          # separate concern).
           keytool -genkeypair \
             -keystore android.keystore \
             -alias android \
@@ -92,84 +133,7 @@ jobs:
             -keypass android \
             -dname "CN=Quick Event Coordinator, OU=Dev, O=QEC, L=Tel Aviv, ST=IL, C=IL"
 
-      - name: Set app version from input
-        working-directory: build
-        run: |
-          VERSION_NAME="${{ github.event.inputs.version || github.ref_name }}"
-          # Strip leading "v" if present (e.g. v1.0.0 → 1.0.0)
-          VERSION_NAME="${VERSION_NAME#v}"
-          # Fallback if empty
-          VERSION_NAME="${VERSION_NAME:-1.0.0}"
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          # Compute a monotonically increasing appVersionCode from the run number
-          VERSION_CODE="${{ github.run_number }}"
-          # Patch twa-manifest.json with the resolved values
-          node -e "
-            const fs = require('fs');
-            const m = JSON.parse(fs.readFileSync('twa-manifest.json', 'utf8'));
-            m.appVersionName = '$VERSION_NAME';
-            m.appVersion = '$VERSION_NAME';
-            m.appVersionCode = $VERSION_CODE;
-            fs.writeFileSync('twa-manifest.json', JSON.stringify(m, null, 2));
-          "
-
-      - name: Scaffold TWA project via init
-        working-directory: build
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME }}
-        run: |
-          # `init` is interactive but accepts defaults on Enter for every
-          # prompt. We pipe ~40 blank lines so every question is answered
-          # with its default. The web manifest URL supplies the bulk of
-          # the fields; our own twa-manifest.json overrides afterwards.
-          yes "" | head -n 40 | bubblewrap init \
-            --manifest=https://tuvyanoam-code.github.io/Quick-Event-Coordinator/manifest.json \
-            --directory=. || true
-          # Replace the auto-generated manifest with our curated one, then
-          # regenerate the project so the new values take effect.
-          cp ../twa-manifest.json ./twa-manifest.json
-          bubblewrap update --skipVersionUpgrade
-          # Defensive patch: some bubblewrap template versions leave
-          # splashScreenFadeOutDuration empty if the manifest field is
-          # missing. Force a sane default so gradle can parse.
-          if [ -f app/build.gradle ]; then
-            sed -i 's/splashScreenFadeOutDuration: *,/splashScreenFadeOutDuration: 300,/' app/build.gradle
-            echo "--- Patched build.gradle line 44 area ---"
-            sed -n '40,48p' app/build.gradle
-          fi
-
-      - name: Build unsigned APK via Gradle
-        working-directory: build
-        run: |
-          # Run bubblewrap's build (also tries to sign, but that step has
-          # failed silently in past runs — we re-sign explicitly below
-          # with apksigner to guarantee a valid signature).
-          BUBBLEWRAP_JDK_PATH=$JAVA_HOME \
-          BUBBLEWRAP_KEYSTORE_PASSWORD=android \
-          BUBBLEWRAP_KEY_PASSWORD=android \
-          bubblewrap build --skipPwaValidation || true
-          # Always run gradle assembleRelease directly so we have an
-          # APK to sign even if bubblewrap's wrapper failed.
-          ./gradlew assembleRelease --no-daemon
-
-      - name: Sign APK explicitly with apksigner
-        working-directory: build
-        run: |
-          # Locate a signed APK first (bubblewrap may have produced one);
-          # fall back to unsigned if not. Then always run apksigner to
-          # ensure the final file is signed with our keystore under
-          # APK Signing Scheme v2 + v3 (required on Android 11+).
-          APKSIGNER=$(find "$ANDROID_HOME" -name "apksigner" -type f 2>/dev/null | sort | tail -1)
-          ZIPALIGN=$(find "$ANDROID_HOME" -name "zipalign" -type f 2>/dev/null | sort | tail -1)
-          echo "apksigner: $APKSIGNER"
-          echo "zipalign:  $ZIPALIGN"
-
-          # Prefer explicitly-unsigned output from gradle; else any apk under outputs
-          UNSIGNED=$(find . -path "*/build/outputs/apk/release/*.apk" 2>/dev/null | head -1)
-          echo "Unsigned candidate: $UNSIGNED"
-          [ -z "$UNSIGNED" ] && { echo "No APK produced!"; exit 1; }
-
-          # zipalign then sign
+          # zipalign then sign with all three schemes
           "$ZIPALIGN" -p -f 4 "$UNSIGNED" app-release-aligned.apk
           "$APKSIGNER" sign \
             --ks android.keystore \
@@ -182,28 +146,19 @@ jobs:
             --out app-release-signed.apk \
             app-release-aligned.apk
 
-          # Verify the signature is actually valid before shipping it
+          # Verify the result — fail the build if the APK is unsigned or
+          # signature doesn't validate.
           "$APKSIGNER" verify -v app-release-signed.apk
 
-      - name: Locate APK
-        id: find-apk
-        working-directory: build
-        run: |
-          # At this point app-release-signed.apk is guaranteed to exist
-          # and be v1+v2+v3 signed thanks to the previous step.
-          APK="app-release-signed.apk"
-          if [ ! -f "$APK" ]; then
-            echo "Signed APK missing!"
-            exit 1
-          fi
-          cp "$APK" "quick-event-coordinator-${VERSION_NAME}.apk"
-          echo "apk_name=quick-event-coordinator-${VERSION_NAME}.apk" >> $GITHUB_OUTPUT
+          # Friendly rename
+          cp app-release-signed.apk "quick-event-coordinator-${VERSION_NAME}.apk"
+          echo "APK_FILE=quick-event-coordinator-${VERSION_NAME}.apk" >> $GITHUB_ENV
 
       - name: Upload as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.find-apk.outputs.apk_name }}
-          path: build/${{ steps.find-apk.outputs.apk_name }}
+          name: ${{ env.APK_FILE }}
+          path: ${{ env.APK_FILE }}
           retention-days: 30
 
       - name: Create GitHub Release with APK
@@ -211,21 +166,22 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && format('apk-v{0}-{1}', env.VERSION_NAME, github.run_number) || github.ref_name }}
-          name: "APK v${{ env.VERSION_NAME }}"
+          name: "APK v${{ env.VERSION_NAME }} (WebView)"
           body: |
-            Sideload-installable Android APK generated from the live PWA at
+            True WebView-based Android APK — uses Android System WebView to
+            render the web app. Does NOT require Chrome or any other browser
+            to be installed.
+
+            **Installation:**
+            1. Download the `.apk` below to your phone.
+            2. Open the file. If prompted, enable "Install from unknown
+               sources" for your browser/file manager.
+            3. Tap Install.
+
+            The app loads the live site from
             https://tuvyanoam-code.github.io/Quick-Event-Coordinator/
-
-            **Installation on Android:**
-            1. Download the `.apk` file below to your phone.
-            2. Open the file from your Downloads notification.
-            3. If prompted, enable "Install from unknown sources" for your
-               browser/file-manager (Settings → Apps → Special access → Install
-               unknown apps).
-            4. Tap Install.
-
-            The website continues to work normally — this APK is an additional
-            distribution channel, not a replacement.
-          files: build/${{ steps.find-apk.outputs.apk_name }}
+            at runtime, so any future site update is reflected immediately
+            without needing to reinstall the APK.
+          files: ${{ env.APK_FILE }}
           draft: false
           prerelease: false

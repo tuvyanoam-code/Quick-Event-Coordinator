@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.tuvyanoamcode.quickeventcoordinator",
+  "appName": "Quick Event Coordinator",
+  "webDir": "www",
+  "server": {
+    "url": "https://tuvyanoam-code.github.io/Quick-Event-Coordinator/",
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "android": {
+    "backgroundColor": "#f5f3ec",
+    "allowMixedContent": false
+  }
+}
